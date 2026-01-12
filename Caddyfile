@@ -40,6 +40,11 @@
     reverse_proxy neo4j:7474
 }
 
+# OpenCode Web Interface (optional)
+# {$OPENCODE_HOSTNAME} {
+#     reverse_proxy localhost:4096
+# }
+
 import /etc/caddy/addons/*.conf
 
 # # SearXNG

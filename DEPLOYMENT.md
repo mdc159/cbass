@@ -124,7 +124,29 @@ langfuse.yourdomain.com   A    your-vps-ip
 neo4j.yourdomain.com      A    your-vps-ip
 ```
 
-### 6. Start Services
+### 6. Install OpenCode (Optional but Recommended)
+
+OpenCode provides AI-assisted development and is excellent for learning:
+
+```bash
+# Install OpenCode
+curl -fsSL https://opencode.ai/install | bash
+
+# Or via npm
+npm install -g opencode-ai
+
+# Verify installation
+opencode --version
+```
+
+**For web access**, add to `.env`:
+```bash
+OPENCODE_HOSTNAME=opencode.yourdomain.com
+```
+
+Uncomment the OpenCode section in `Caddyfile`, then start as systemd service (see OPENCODE_SETUP.md for details).
+
+### 7. Start Services
 
 ```bash
 cd /opt/cbass
