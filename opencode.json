@@ -1,0 +1,55 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "small_model": "anthropic/claude-haiku-4-20250514",
+  "theme": "opencode",
+  "autoupdate": true,
+
+  "permission": {
+    "edit": "allow",
+    "bash": "ask",
+    "webfetch": "allow"
+  },
+
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    },
+    "gh_grep": {
+      "type": "remote",
+      "url": "https://mcp.grep.app",
+      "enabled": true
+    }
+  },
+
+  "agent": {
+    "deploy": {
+      "description": "VPS deployment specialist for Docker Compose stacks",
+      "mode": "subagent",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    }
+  },
+
+  "instructions": [
+    "AGENTS.md",
+    "README.md"
+  ],
+
+  "tools": {
+    "bash": true,
+    "edit": true,
+    "write": true,
+    "read": true,
+    "grep": true,
+    "glob": true,
+    "webfetch": true
+  },
+
+  "share": "manual"
+}
