@@ -45,3 +45,4 @@ supabase/
 # Temporary files
 *.tmp
 *.log
+tmpclaude-*
