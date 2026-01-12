@@ -1,0 +1,220 @@
+name: Codex Review (Read-Only)
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+env:
+  # JSON array of GitHub usernames allowed to trigger AI workflows in this repo.
+  # Prefer setting a repository OR organization variable AI_WORKFLOW_AUTHORIZED_USERS_JSON
+  # (Repo: Settings → Secrets and variables → Actions → Variables)
+  # Example: ["mdc159"] or ["mdc159","teammate1"]
+  AI_WORKFLOW_AUTHORIZED_USERS_JSON: ${{ vars.AI_WORKFLOW_AUTHORIZED_USERS_JSON || '[]' }}
+
+jobs:
+  codex-review:
+    # Only trigger on @codex-review command from authorized users
+    if: |
+      (
+        github.event_name == 'issue_comment' ||
+        github.event_name == 'pull_request_review_comment'
+      ) &&
+      contains(github.event.comment.body, '@codex-review') &&
+      contains(fromJSON((startsWith(vars.AI_WORKFLOW_AUTHORIZED_USERS_JSON, '[') && vars.AI_WORKFLOW_AUTHORIZED_USERS_JSON) || '[]'), github.event.comment.user.login)
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read # Read-only access
+      pull-requests: write # Allow comments on PRs
+      issues: write # Allow comments on issues
+      actions: read # Read CI results
+      id-token: write # Required for OIDC authentication
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for better context
+
+      - name: Configure Git
+        run: |
+          git config user.name "codex-bot"
+          git config user.email "codex-bot@users.noreply.github.com"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get Issue/PR Number
+        id: get-number
+        run: |
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            # issue_comment can be for an Issue OR a PR conversation.
+            # If issue.pull_request exists, treat it as a PR.
+            if [ -n "${{ github.event.issue.pull_request.url }}" ]; then
+              echo "target_kind=pr" >> $GITHUB_OUTPUT
+            else
+              echo "target_kind=issue" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "target_kind=pr" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fetch target details (issue or PR)
+        id: fetch-details
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ steps.get-number.outputs.target_kind }}" = "pr" ]; then
+            echo "Fetching PR #${{ env.number }} details + diff..."
+            gh pr view ${{ steps.get-number.outputs.number }} --json title,body,comments,files --jq '{title,body,comments: [.comments[] | {author: .author.login, body: .body}], files: [.files[] | {path: .path, additions: .additions, deletions: .deletions}]}' > /tmp/target-details.json
+            gh pr diff ${{ steps.get-number.outputs.number }} > /tmp/target-diff.txt
+          else
+            echo "Fetching Issue #${{ env.number }} details..."
+            gh issue view ${{ steps.get-number.outputs.number }} --json title,body,comments --jq '{title,body,comments: [.comments[] | {author: .author.login, body: .body}]}' > /tmp/target-details.json
+            # No diff for issues
+            : > /tmp/target-diff.txt
+          fi
+
+      - name: Prepare review instructions
+        run: |
+          # Support both layouts:
+          # - This repo: prompt templates at repo root
+          # - Copied into other repos: templates under .github/
+          TEMPLATE_PATH=".github/pr_review_prompt.md"
+          if [ ! -f "$TEMPLATE_PATH" ]; then
+            TEMPLATE_PATH="pr_review_prompt.md"
+          fi
+          if [ ! -f "$TEMPLATE_PATH" ]; then
+            echo "❌ Could not find PR review prompt template at .github/pr_review_prompt.md or pr_review_prompt.md"
+            exit 1
+          fi
+
+          # Read the review template
+          INSTRUCTIONS=$(cat "$TEMPLATE_PATH")
+
+          TARGET_DETAILS=$(cat /tmp/target-details.json)
+          TARGET_DIFF=$(cat /tmp/target-diff.txt)
+
+          # Prepend context with full target details (and diff when available)
+          echo "# GitHub Context" > /tmp/codex-review-prompt.md
+          echo "- Repository: ${{ github.repository }}" >> /tmp/codex-review-prompt.md
+          if [ "${{ steps.get-number.outputs.target_kind }}" = "pr" ]; then
+            echo "- PR Number: ${{ steps.get-number.outputs.number }}" >> /tmp/codex-review-prompt.md
+          else
+            echo "- Issue Number: ${{ steps.get-number.outputs.number }}" >> /tmp/codex-review-prompt.md
+          fi
+          echo "- Triggered by: ${{ github.event.comment.user.login }}" >> /tmp/codex-review-prompt.md
+          echo "" >> /tmp/codex-review-prompt.md
+          if [ "${{ steps.get-number.outputs.target_kind }}" = "pr" ]; then
+            echo "## Pull Request Details" >> /tmp/codex-review-prompt.md
+          else
+            echo "## Issue Details" >> /tmp/codex-review-prompt.md
+          fi
+          echo '```json' >> /tmp/codex-review-prompt.md
+          echo "$TARGET_DETAILS" >> /tmp/codex-review-prompt.md
+          echo '```' >> /tmp/codex-review-prompt.md
+          if [ "${{ steps.get-number.outputs.target_kind }}" = "pr" ]; then
+            echo "" >> /tmp/codex-review-prompt.md
+            echo "## Pull Request Diff" >> /tmp/codex-review-prompt.md
+            echo '```diff' >> /tmp/codex-review-prompt.md
+            echo "$TARGET_DIFF" >> /tmp/codex-review-prompt.md
+            echo '```' >> /tmp/codex-review-prompt.md
+            echo "" >> /tmp/codex-review-prompt.md
+          fi
+          echo "$INSTRUCTIONS" >> /tmp/codex-review-prompt.md
+
+      - name: Run Codex Review
+        id: codex
+        uses: openai/codex-action@v1
+        timeout-minutes: 15
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+
+          # Review-specific instructions loaded from template
+          prompt-file: /tmp/codex-review-prompt.md
+
+          # Output file for Codex results
+          output-file: codex-review.md
+
+          # Configure Codex for read-only with file writes
+          safety-strategy: drop-sudo
+          sandbox: workspace-write
+
+      - name: Post review comment
+        if: success()
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ steps.get-number.outputs.number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+
+            // Read the review output if it exists
+            let reviewBody = '## Code Review by Codex\n\n';
+            try {
+              if (fs.existsSync('codex-review.md')) {
+                reviewBody += fs.readFileSync('codex-review.md', 'utf8');
+              } else {
+                reviewBody += 'Codex completed the review. No issues found or review file not generated.';
+              }
+            } catch (error) {
+              reviewBody += 'Error reading review output.';
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: reviewBody
+            });
+
+  unauthorized-message:
+    # Post message for unauthorized users
+    if: |
+      (
+        github.event_name == 'issue_comment' ||
+        github.event_name == 'pull_request_review_comment'
+      ) &&
+      contains(github.event.comment.body, '@codex-review') &&
+      !contains(fromJSON((startsWith(vars.AI_WORKFLOW_AUTHORIZED_USERS_JSON, '[') && vars.AI_WORKFLOW_AUTHORIZED_USERS_JSON) || '[]'), github.event.comment.user.login)
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Post unauthorized message
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `❌ @${context.actor} - You are not authorized to trigger Codex reviews.\n\nOnly the maintainers can trigger Codex: Please ask a maintainer for review.`
+            };
+
+            if (context.eventName === 'issue_comment') {
+              await github.rest.issues.createComment({
+                ...comment,
+                issue_number: context.issue.number
+              });
+            } else if (context.eventName === 'pull_request_review_comment') {
+              await github.rest.pulls.createReplyForReviewComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                comment_id: context.payload.comment.id,
+                body: comment.body
+              });
+            }
