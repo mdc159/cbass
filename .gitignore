@@ -49,3 +49,6 @@ tmpclaude-*
 
 # Large media files
 media/
+
+# MCP config (contains API keys)
+.mcp.json
