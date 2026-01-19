@@ -46,3 +46,6 @@ supabase/
 *.tmp
 *.log
 tmpclaude-*
+
+# Large media files
+media/
