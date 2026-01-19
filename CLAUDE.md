@@ -39,9 +39,9 @@ The primary learner is studying **biology**, so projects and examples should int
 ### In Progress
 - [ ] Set up MCP servers for Claude Code integration
   - [x] n8n-mcp configured (`.mcp.json` created with API key)
+  - [x] mcp-flowise configured (API key added)
   - [ ] Install n8n-skills plugin (`/plugin install czlonkowski/n8n-skills`)
-  - [ ] Restart Claude Code to load MCP server
-  - [ ] Create Flowise API key and add mcp-flowise
+  - [ ] Restart Claude Code to load MCP servers
 
 ### Next Up
 - [ ] Create n8n owner account (user management was reset)
