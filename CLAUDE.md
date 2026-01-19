@@ -18,7 +18,7 @@ CBass is a self-hosted AI Docker Compose orchestration platform - a fork/enhance
 
 | Subdomain | Service | Status |
 |-----------|---------|--------|
-| `cbass.space` | Dashboard | Running |
+| `cbass.space` | Dashboard (Next.js AI Command Center) | Running |
 | `www.cbass.space` | Redirect to cbass.space | Running |
 | `n8n.cbass.space` | n8n Workflow Automation | Running |
 | `openwebui.cbass.space` | Open WebUI Chat | Running |
@@ -27,6 +27,7 @@ CBass is a self-hosted AI Docker Compose orchestration platform - a fork/enhance
 | `langfuse.cbass.space` | Langfuse Observability | Running |
 | `neo4j.cbass.space` | Neo4j Browser | Running |
 | `searxng.cbass.space` | SearXNG Search | Running |
+| `kali.cbass.space` | Kali Linux Desktop (KasmWeb) | Running |
 
 ## VPS Resources
 
@@ -39,6 +40,7 @@ CBass is a self-hosted AI Docker Compose orchestration platform - a fork/enhance
 
 | Service | Port | Purpose |
 |---------|------|---------|
+| **Dashboard** | 3001 | Next.js AI Command Center with video landing |
 | **n8n** | 5678 | Workflow automation & AI agent building |
 | **Open WebUI** | 8080 | Chat interface for LLMs |
 | **Supabase** | 8000 | Postgres DB, vector store (pgvector), auth |
@@ -48,6 +50,8 @@ CBass is a self-hosted AI Docker Compose orchestration platform - a fork/enhance
 | **Neo4j** | 7474/7687 | Knowledge graphs |
 | **SearXNG** | 8081 | Meta search engine |
 | **Langfuse** | 3000 | LLM observability & tracing |
+| **Kali** | 6901 | Browser-based Kali Linux (KasmWeb) |
+| **Updater** | 9000 | Webhook-triggered container updates |
 | **Caddy** | 80/443 | Reverse proxy with auto-TLS |
 
 ## Key Files
@@ -70,6 +74,14 @@ CBass/
 ├── docker-compose.yml       # Service definitions
 ├── Caddyfile               # Reverse proxy config
 ├── n8n_pipe.py             # Open WebUI → n8n bridge
+├── dashboard/              # Next.js AI Command Center
+│   ├── app/               # Next.js app router pages
+│   ├── components/        # UI components (shadcn/ui)
+│   ├── public/            # Static assets (bg.mp4 video)
+│   └── Dockerfile         # Container build
+├── scripts/                # Webhook automation
+│   ├── hooks.json         # Webhook configuration
+│   └── update-container.sh # Container update script
 ├── supabase/               # Auto-cloned on first run
 ├── n8n/backup/             # Pre-built RAG workflows
 ├── n8n-tool-workflows/     # Additional workflow imports
@@ -120,7 +132,9 @@ Open WebUI (:8080) → n8n_pipe.py → n8n webhook (:5678)
 
 ### Environment Variables (in `.env`)
 - **Required**: `N8N_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`
-- **Hostnames**: `N8N_HOSTNAME`, `WEBUI_HOSTNAME`, `FLOWISE_HOSTNAME`, etc.
+- **Hostnames**: `N8N_HOSTNAME`, `WEBUI_HOSTNAME`, `FLOWISE_HOSTNAME`, `DASHBOARD_HOSTNAME`, `KALI_HOSTNAME`, etc.
+- **Dashboard**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Kali**: `VNC_PW` (VNC password for Kali desktop)
 - **Langfuse**: `CLICKHOUSE_PASSWORD`, `MINIO_ROOT_PASSWORD`
 - **Neo4j**: `NEO4J_AUTH=username/password`
 

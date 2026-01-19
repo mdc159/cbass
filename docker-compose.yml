@@ -14,6 +14,8 @@ volumes:
   langfuse_clickhouse_data:
   langfuse_clickhouse_logs:
   langfuse_minio_data:
+  kali-data:
+  kali-tools:
 
 x-n8n: &service-n8n
   image: n8nio/n8n:latest
@@ -78,6 +80,8 @@ services:
       - 8080/tcp
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
     volumes:
       - open-webui:/app/backend/data
 
@@ -153,6 +157,7 @@ services:
       - SEARXNG_HOSTNAME=${SEARXNG_HOSTNAME:-":8006"}
       - LANGFUSE_HOSTNAME=${LANGFUSE_HOSTNAME:-":8007"}
       - NEO4J_HOSTNAME=${NEO4J_HOSTNAME:-":8008"}
+      - KALI_HOSTNAME=${KALI_HOSTNAME:-":8009"}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-internal}
     cap_drop:
       - ALL
@@ -393,3 +398,44 @@ services:
     image: ollama/ollama:rocm
     depends_on:
      - ollama-gpu-amd
+
+  dashboard:
+    build: ./dashboard
+    container_name: dashboard
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=https://supabase.cbass.space
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}
+
+  # Kali Linux Desktop - Security learning environment with GUI
+  kali:
+    image: kasmweb/kali-rolling-desktop:1.16.0
+    container_name: kali
+    hostname: kali
+    restart: unless-stopped
+    environment:
+      - VNC_PW=kali123
+    volumes:
+      - kali-data:/home/kasm-user
+    expose:
+      - 6901
+    shm_size: "1gb"
+    networks:
+      - default
+
+  # Update webhook service - triggers container updates
+  updater:
+    image: almir/webhook
+    container_name: updater
+    restart: unless-stopped
+    command: -hooks=/etc/webhook/hooks.json -verbose
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./scripts/hooks.json:/etc/webhook/hooks.json:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/opt/cbass
+    expose:
+      - 9000
+    working_dir: /opt/cbass
+    networks:
+      - default

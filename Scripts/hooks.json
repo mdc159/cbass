@@ -1,0 +1,17 @@
+[
+  {
+    "id": "update-container",
+    "execute-command": "/scripts/update-container.sh",
+    "command-working-directory": "/opt/cbass",
+    "pass-arguments-to-command": [
+      { "source": "url", "name": "container" }
+    ],
+    "trigger-rule": {
+      "match": {
+        "type": "value",
+        "value": "cbass-update-secret-2026",
+        "parameter": { "source": "url", "name": "token" }
+      }
+    }
+  }
+]

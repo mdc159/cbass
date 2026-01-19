@@ -47,4 +47,13 @@ www.cbass.space {
     reverse_proxy searxng:8080
 }
 
+# Kali Web Terminal
+{$KALI_HOSTNAME} {
+    reverse_proxy https://kali:6901 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+}
+
 import /etc/caddy/addons/*.conf
