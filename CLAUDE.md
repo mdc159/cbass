@@ -4,6 +4,36 @@
 
 CBass is a self-hosted AI Docker Compose orchestration platform - a fork/enhancement of n8n's self-hosted-ai-starter-kit. It combines 10+ AI and database services into a cohesive local infrastructure stack.
 
+## Educational Purpose
+
+**This site serves as an educational tutorial platform for teaching AI tools and services.**
+
+The primary learner is studying **biology**, so projects and examples should interweave:
+- Learning how to use the AI/automation tools (n8n, Flowise, Open WebUI, etc.)
+- Applying them to biology-related problems and workflows
+
+### Biology + AI Project Ideas
+
+| Tool | Biology Application |
+|------|---------------------|
+| **n8n** | Automate literature searches, monitor PubMed for new papers, parse research PDFs |
+| **Open WebUI + Ollama** | Chat with biology textbooks, explain complex concepts, quiz preparation |
+| **Neo4j** | Build knowledge graphs of metabolic pathways, gene interactions, taxonomies |
+| **Supabase** | Store and query experimental data, species databases, lab inventory |
+| **Flowise** | Create study assistants, flashcard generators, concept explainers |
+| **SearXNG** | Privacy-focused research searches across academic sources |
+| **Qdrant** | Semantic search over biology papers, find similar research |
+| **Langfuse** | Track learning progress, analyze chat interactions |
+
+### Learning Progression
+1. **Basics**: Navigate dashboard, understand what each service does
+2. **Chat**: Use Open WebUI to ask biology questions, learn prompt engineering
+3. **Automation**: Build first n8n workflow (e.g., daily biology fact emailer)
+4. **Data**: Store biology data in Supabase, query it
+5. **Knowledge Graphs**: Model biological relationships in Neo4j
+6. **RAG**: Build a biology study assistant with document retrieval
+7. **Advanced**: Combine multiple services into complex biology research tools
+
 ## Infrastructure
 
 - **Domain**: `cbass.space` - registered and managed at Amazon (Route 53)
@@ -87,13 +117,10 @@ CBass/
 ├── n8n-tool-workflows/     # Additional workflow imports
 ├── flowise/                # Flowise tools & chatflows
 ├── searxng/                # SearXNG config (generated)
-├── .claude/                # Claude Code config
-│   ├── agents/            # LSP-aware agents
-│   ├── skills/            # Reusable patterns
-│   └── hooks/             # Automated checks
-└── .opencode/              # OpenCode AI config
-    ├── agent/             # Deployment specialist
-    └── command/           # CLI commands
+└── .claude/                # Claude Code config
+    ├── agents/            # LSP-aware agents
+    ├── skills/            # Reusable patterns
+    └── hooks/             # Automated checks
 ```
 
 ## Deployment
