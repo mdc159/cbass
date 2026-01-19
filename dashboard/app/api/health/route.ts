@@ -4,7 +4,6 @@ const services = [
   { name: "n8n", url: "https://n8n.cbass.space" },
   { name: "Open WebUI", url: "https://openwebui.cbass.space" },
   { name: "Flowise", url: "https://flowise.cbass.space" },
-  { name: "OpenCode", url: "https://opencode.cbass.space" },
   { name: "Supabase", url: "https://supabase.cbass.space" },
   { name: "Langfuse", url: "https://langfuse.cbass.space" },
   { name: "SearXNG", url: "https://searxng.cbass.space" },

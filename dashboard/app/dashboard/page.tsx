@@ -12,7 +12,6 @@ const services = [
   { name: "n8n", description: "Workflow Automation", url: "https://n8n.cbass.space", icon: "🤖" },
   { name: "Open WebUI", description: "AI Chat Interface", url: "https://openwebui.cbass.space", icon: "💬" },
   { name: "Flowise", description: "Visual AI Builder", url: "https://flowise.cbass.space", icon: "🔄" },
-  { name: "OpenCode", description: "AI Code Assistant", url: "https://opencode.cbass.space", icon: "🧠" },
   { name: "Supabase", description: "Database & Backend", url: "https://supabase.cbass.space", icon: "🗄️" },
   { name: "Langfuse", description: "LLM Observability", url: "https://langfuse.cbass.space", icon: "📊" },
   { name: "SearXNG", description: "Meta Search Engine", url: "https://searxng.cbass.space", icon: "🔍" },
