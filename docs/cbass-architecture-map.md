@@ -76,6 +76,10 @@ flowchart TB
   LangfuseWorker --> Redis
 ```
 
+This diagram shows how external traffic enters through DNS and Caddy, then branches into control plane UIs and data plane APIs. It highlights that Caddy is the only public ingress and everything else stays inside the Docker network.
+
+The significance is the separation of concerns: humans use UIs (control plane), while workflows and storage live in the data plane. This is the mental model students should use when tracing requests or diagnosing issues.
+
 ## Planes and Responsibilities
 
 ### Planes
@@ -201,6 +205,10 @@ flowchart LR
   O --> N --> W --> U
 ```
 
+This swim lane groups the same request across layers, showing who is responsible at each step. The "App Layer" (Open WebUI and n8n) coordinates work, and the "Data/AI" lane performs the heavy lifting.
+
+The significance is troubleshooting and teaching. If a response is wrong or slow, the lanes suggest where to look in order: edge, app, data, then observability.
+
 ## Sequence Diagram: Open WebUI to n8n RAG Flow
 
 ```mermaid
@@ -224,6 +232,10 @@ sequenceDiagram
   WebUI-->>User: Render reply
 ```
 
+This sequence diagram zooms into the RAG path, showing the exact call order from the UI to n8n and then to Qdrant, Supabase, and Ollama. It is the most common "happy path" for a chat request that needs context.
+
+The significance is latency and failure analysis. Each step is a potential bottleneck, and the diagram makes it clear where to add caching, retries, or richer observability.
+
 ## Flowchart: Startup Sequence
 
 ```mermaid
@@ -236,6 +248,10 @@ flowchart TB
   Supabase --> Wait["Sleep 10 seconds"]
   Wait --> LocalAI["docker compose up -d (local AI stack)"]
 ```
+
+This flowchart captures the exact startup order enforced by `start_services.py`. Supabase comes first because other services depend on Postgres and Kong being ready before they can initialize correctly.
+
+The significance is operational reliability. It explains why running `docker compose` directly can lead to missing config or startup race conditions.
 
 ## Control Plane Surfaces (UIs)
 
@@ -293,6 +309,150 @@ Examples of internal DNS usage from within containers:
 | `scripts/update-container.sh` | Update webhook target | `scripts/` |
 | `Scripts/hooks.json` | Webhook config for updates | `Scripts/` |
 
+## Jarvis Agent: Structure and Minimum Access Model
+
+The goal for "Jarvis" is twofold: teach the student how the stack works and safely assist with building workflows in n8n and Flowise. That means Jarvis belongs in the control plane (student interaction) but needs narrowly scoped access to a few data plane APIs.
+
+```mermaid
+flowchart LR
+  subgraph Student["Student"]
+    S["Chat UI (Dashboard or Open WebUI)"]
+  end
+  subgraph Jarvis["Jarvis Service"]
+    J["Agent Orchestrator"]
+    R["Docs + RAG Index"]
+    H["Human Approval Gate"]
+  end
+  subgraph Tools["Approved Tools (Scoped)"]
+    N8NAPI["n8n API (workflow CRUD)"]
+    FlowiseAPI["Flowise API (chatflow CRUD)"]
+    SupabaseRO["Supabase (read-only metadata)"]
+  end
+  subgraph Obs["Observability"]
+    Langfuse["Langfuse traces"]
+  end
+
+  S --> J
+  J --> R
+  J --> H
+  H --> N8NAPI
+  H --> FlowiseAPI
+  J --> SupabaseRO
+  J --> Langfuse
+```
+
+This diagram shows Jarvis as a dedicated service that sits between the student and the tooling. Jarvis talks to documentation and to APIs, but any write actions go through an explicit approval gate.
+
+The significance is least privilege. Jarvis can explain the system and draft workflows, but it cannot mutate the stack without a deliberate human check.
+
+### Recommended structure
+
+- Run Jarvis as its own container, separate from n8n and Flowise, with a non-root user.
+- Provide a single chat surface (Dashboard or Open WebUI) and route all actions through a small tool layer.
+- Give Jarvis a read-only docs index (`docs/`, `README.md`) with RAG so it can explain the architecture without "guessing."
+- Log all Jarvis actions to Langfuse for traceability.
+
+### Minimum required access
+
+- n8n: API token scoped to workflow CRUD only; no credential or execution secrets.
+- Flowise: API key scoped to chatflow import/update; no global admin.
+- Supabase: read-only key for metadata and user education; avoid write privileges.
+- No Docker socket access, no shell access, and no host filesystem mounts beyond docs.
+
+### Workflow creation approach
+
+- Jarvis drafts workflows as JSON and either:
+  - opens a pull request in `n8n/backup/workflows`, or
+  - creates a "staged" workflow via the n8n API and waits for approval.
+- Flowise chatflows follow the same pattern using Flowise import APIs or JSON exports.
+
+### Safety guardrails
+
+- Require explicit approval before any write action.
+- Enforce allowlists for target services, webhooks, and external domains.
+- Reject requests that need broad credentials or unbounded filesystem access.
+
+### Jarvis permissions matrix (minimum viable)
+
+| Capability | Scope | Allowed? | Notes |
+|---|---|---|---|
+| Read docs (`docs/`, `README.md`) | Local filesystem | Yes | Primary teaching source |
+| Query service status | n8n/Flowise read-only APIs | Yes | Health and metadata only |
+| Create n8n workflow | n8n API (workflow CRUD) | Yes, with approval | Require human approval gate |
+| Update n8n credentials | n8n API | No | Keep secrets out of agent scope |
+| Execute n8n workflow | n8n API | No | Avoid side effects without review |
+| Create Flowise chatflow | Flowise API | Yes, with approval | Staged or draft only |
+| Update Flowise credentials | Flowise API | No | Keep secrets out of agent scope |
+| Read Supabase metadata | Supabase read-only key | Yes | Schema and project info |
+| Write Supabase data | Supabase | No | Avoid data mutations |
+| Shell access | VPS | No | Use CI or manual ops only |
+| Docker socket | VPS | No | Prevent container escape |
+
+### Jarvis rollout checklist
+
+1. Define Jarvis role: educator + workflow assistant, no infra control.
+2. Provision a dedicated API token for n8n with workflow CRUD only.
+3. Provision a dedicated API token for Flowise with chatflow CRUD only.
+4. Create a read-only Supabase key for metadata queries (no writes).
+5. Build a docs index from `docs/` and `README.md` for RAG answers.
+6. Add an approval gate (UI prompt or webhook) for any write action.
+7. Log requests and actions to Langfuse for traceability.
+8. Validate with a dry-run workflow creation before enabling live writes.
+
+### Jarvis threat model (student-friendly)
+
+Primary threats to guard against:
+
+- Accidental data mutation: a tool call writes to Supabase or triggers a workflow with side effects.
+- Secret leakage: credentials or tokens are exposed to the agent or returned to the student.
+- Overreach: Jarvis gains shell/Docker access and can change infrastructure.
+- Prompt injection: a user or document tries to trick Jarvis into running forbidden actions.
+
+Mitigations to apply:
+
+- Enforce read-only defaults and explicit approval for writes.
+- Scope API tokens to workflow/chatflow CRUD only; block credential endpoints.
+- Keep secrets in environment variables, never return them in responses.
+- Use allowlists for domains and tool calls; deny anything outside scope.
+- Log all tool calls in Langfuse and review periodically.
+
+### VPS-specific considerations (sebastian / 191.101.0.164)
+
+This stack currently runs on a public VPS with the project in `/opt/cbass` and Docker running as root. That means any agent access to the host or Docker socket would be equivalent to full server control.
+
+Observed public exposures include Caddy on 80/443, plus Supabase Kong (8000/8443), Supabase pooler (5432/6543), and Supabase analytics (4000). These are powerful endpoints and should not be reachable by Jarvis unless you explicitly need them and add strict allowlists.
+
+For Jarvis on this VPS, keep it constrained to API calls through Caddy hostnames and deny any direct access to:
+
+- Host shell (`ssh`, `bash`, `docker`).
+- Docker socket (`/var/run/docker.sock`).
+- Raw Supabase ports (8000/8443/5432/6543/4000) unless you are in a supervised maintenance session.
+
+If you want Jarvis to help with admin tasks, route them through a controlled approval flow rather than exposing the host or database directly.
+
+Note for future reference: maintain a simple allow/deny list of hostnames and ports for Jarvis (e.g., only Caddy-hosted domains, deny raw Supabase and host/Docker access) and update it whenever the VPS exposure changes.
+
+### Sample approval flow (write actions)
+
+```mermaid
+sequenceDiagram
+  participant Student
+  participant Jarvis
+  participant Approver as Human Approver
+  participant n8nAPI
+  participant FlowiseAPI
+
+  Student->>Jarvis: "Create a new n8n workflow"
+  Jarvis->>Jarvis: Draft workflow JSON
+  Jarvis->>Approver: Request approval with diff/summary
+  Approver-->>Jarvis: Approve or reject
+  Jarvis->>n8nAPI: Create workflow (if approved)
+  Jarvis->>FlowiseAPI: Create chatflow (if approved)
+  Jarvis-->>Student: Report result + link
+```
+
+This approval flow keeps Jarvis fast for drafting but safe for execution. It also gives the student a clear checkpoint where humans review changes before anything is written to n8n or Flowise.
+
 ## Recommendations
 
 1. Security hardening
@@ -312,6 +472,84 @@ Examples of internal DNS usage from within containers:
 5. Student-friendly improvements
    - Add a short "first lab" checklist in the README: test Open WebUI, run a simple n8n workflow, verify Qdrant and Neo4j connections.
    - Provide a prebuilt n8n workflow that demonstrates RAG and logs to Langfuse.
+
+## VPS Maintenance Checklist (Student-Owned)
+
+This checklist keeps the VPS healthy and reduces the chance of outages or data loss. Use it as a routine.
+
+### Daily or per session
+
+- Confirm the stack is up: `docker compose -p localai ps`
+- Check Caddy and core service logs for errors: `docker compose -p localai logs --tail 50 caddy n8n open-webui`
+- Verify disk space is not low: `df -h`
+
+### Weekly
+
+- Apply OS security updates and reboot if required.
+- Review container restarts and health checks.
+- Rotate or prune old Docker images: `docker image prune -f`
+
+### Monthly
+
+- Validate backups by restoring into a test environment.
+- Review firewall rules and exposed ports for drift.
+- Check TLS certificates for renewal issues (Caddy logs).
+
+### Quarterly
+
+- Update pinned container versions after a staged test.
+- Review access keys and rotate any long-lived tokens.
+- Re-read this architecture map and update it for changes.
+
+## VPS Runbook (Common Incidents)
+
+Keep this nearby. Start with the "Quick triage" steps, then follow the specific incident.
+
+### Quick triage (always start here)
+
+1. Check container health: `docker compose -p localai ps`
+2. Check recent errors: `docker compose -p localai logs --tail 100 caddy n8n open-webui`
+3. Check disk: `df -h`
+4. Check memory/CPU: `top` or `htop`
+
+### Incident: Service is down or not responding
+
+1. Identify the container: `docker compose -p localai ps`
+2. Review logs: `docker compose -p localai logs --tail 200 <service>`
+3. Restart just that service: `docker compose -p localai restart <service>`
+4. If it keeps failing, check dependent services (e.g., n8n needs Postgres/Ollama).
+
+### Incident: SSL/TLS errors or browser warnings
+
+1. Check Caddy logs: `docker compose -p localai logs --tail 200 caddy`
+2. Confirm DNS points to the VPS IP.
+3. Restart Caddy: `docker compose -p localai restart caddy`
+4. Wait a few minutes for ACME retries.
+
+### Incident: Disk nearly full
+
+1. Identify large directories: `du -h --max-depth=2 /opt/cbass | sort -h`
+2. Prune unused images: `docker image prune -f`
+3. Prune unused volumes only if you know they are safe to delete.
+
+### Incident: High CPU or memory
+
+1. Find the hot container: `docker stats`
+2. Restart the top offender to stabilize.
+3. Consider adding resource limits in `docker-compose.yml`.
+
+### Incident: Database connection errors (Supabase or Langfuse)
+
+1. Check DB containers: `docker compose -p localai ps db postgres`
+2. Review DB logs: `docker compose -p localai logs --tail 200 db postgres`
+3. Restart the DB service if needed.
+4. Validate credentials in `/opt/cbass/.env`.
+
+### Incident: Workflow creation or API calls failing
+
+1. Check n8n or Flowise logs.
+2. Confirm API tokens and scopes.
+3. Verify that Caddy routes to the correct internal hostnames.
 
 ## Suggested Reading Paths for Students
 
