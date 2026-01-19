@@ -169,6 +169,7 @@ Open WebUI (:8080) → n8n_pipe.py → n8n webhook (:5678)
 - Never use `@` in `POSTGRES_PASSWORD` (breaks URI parsing)
 - `.env` is gitignored - never commit secrets
 - Copy from `env.example` as template
+- **Keep local and VPS `.env` files in sync manually** (they don't sync via git)
 
 ## Pre-built Workflows
 
