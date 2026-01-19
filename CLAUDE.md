@@ -34,6 +34,28 @@ The primary learner is studying **biology**, so projects and examples should int
 6. **RAG**: Build a biology study assistant with document retrieval
 7. **Advanced**: Combine multiple services into complex biology research tools
 
+## Current Todo
+
+### In Progress
+- [ ] Set up MCP servers for Claude Code integration
+  - [x] n8n-mcp configured (`.mcp.json` created with API key)
+  - [ ] Install n8n-skills plugin (`/plugin install czlonkowski/n8n-skills`)
+  - [ ] Restart Claude Code to load MCP server
+  - [ ] Create Flowise API key and add mcp-flowise
+
+### Next Up
+- [ ] Create n8n owner account (user management was reset)
+- [ ] Re-import backed up workflow from `/tmp/n8n-backup.json`
+- [ ] Write services overview tutorial for biology student
+- [ ] First biology project: Build a simple n8n workflow
+
+### Completed
+- [x] Video landing page added to dashboard
+- [x] OpenCode service removed from dashboard
+- [x] Local/GitHub/VPS repos synced
+- [x] Added educational purpose to CLAUDE.md
+- [x] Added .env sync reminder to constraints
+
 ## Infrastructure
 
 - **Domain**: `cbass.space` - registered and managed at Amazon (Route 53)
