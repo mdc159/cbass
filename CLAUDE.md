@@ -55,6 +55,60 @@ The primary learner is studying **biology**, so projects and examples should int
 - [x] Local/GitHub/VPS repos synced
 - [x] Added educational purpose to CLAUDE.md
 - [x] Added .env sync reminder to constraints
+- [x] UI Designer Pipeline workflow rebuilt (`CYfLRw6IPTJ7tfcD`)
+
+## n8n MCP Issues (Needs Fix)
+
+The `n8n-mcp` package has several issues discovered during workflow development:
+
+### Issue 1: Incorrect/Non-existent Node Types
+
+The MCP returns node information for types that don't exist or have incorrect capabilities:
+
+| Claimed Node | Issue |
+|--------------|-------|
+| `@n8n/n8n-nodes-langchain.googleGemini` | Does NOT exist - only `lmChatGoogleGemini` exists |
+| Image operations (`resource: "image"`, `operation: "analyze"`) | Not available on any Gemini node |
+
+**Workaround**: Use `search_nodes` to verify node existence before using. The only Google Gemini node available is `@n8n/n8n-nodes-langchain.lmChatGoogleGemini` (a language model node for agents/chains).
+
+### Issue 2: No Credential Management Tools
+
+The n8n API supports credential operations, but n8n-mcp doesn't expose them:
+
+**Missing tools needed**:
+```
+n8n_list_credentials     - List all credentials (id, name, type)
+n8n_get_credential       - Get credential metadata by ID
+n8n_assign_credential    - Assign credential to workflow nodes
+```
+
+**Current workaround**: Manually look up credential IDs in n8n UI, then use `n8n_update_partial_workflow` with:
+```json
+{
+  "type": "updateNode",
+  "nodeName": "OpenAI Chat Model",
+  "updates": {
+    "credentials": {
+      "openAiApi": { "id": "CREDENTIAL_ID", "name": "OpenAI" }
+    }
+  }
+}
+```
+
+### Known Credential IDs (CBass Instance)
+
+| Service | Credential ID | Credential Type |
+|---------|---------------|-----------------|
+| OpenAI | `t6PNOhqfMP9ssxHr` | `openAiApi` |
+| Google Gemini | `UwcFmvOdHdi8YhPh` | `googlePalmApi` |
+
+### Proposed Fix: Fork n8n-mcp
+
+1. Fork https://github.com/czlonkowski/n8n-mcp
+2. Add credential management tools to `src/mcp/tools-n8n-manager.ts`
+3. Fix node type validation against actual n8n node catalog
+4. Update `.mcp.json` to use local fork
 
 ## Infrastructure
 
