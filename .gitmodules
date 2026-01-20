@@ -1,0 +1,3 @@
+[submodule "references/flowise-masterclass"]
+	path = references/flowise-masterclass
+	url = https://github.com/leonvanzyl/flowise-masterclass-2025.git
