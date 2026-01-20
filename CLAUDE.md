@@ -110,6 +110,41 @@ n8n_assign_credential    - Assign credential to workflow nodes
 3. Fix node type validation against actual n8n node catalog
 4. Update `.mcp.json` to use local fork
 
+## Flowise Issues (Needs Investigation)
+
+### Issue: UI Import Broken
+
+The Flowise UI "Load Chatflow" feature fails silently for both agentflows and chatflows. The error flashes too quickly to read. Even re-importing a flow that was just exported fails.
+
+**Symptoms**:
+- Import button shows brief error, then nothing happens
+- Browser console only shows aria-hidden accessibility warning (not the real error)
+- Affects all JSON files, including ones exported from the same Flowise instance
+
+**Workaround**: Use the API directly with a wrapped format:
+
+```bash
+# The raw export format {nodes, edges} doesn't work
+# Must wrap as {name, flowData, type} where flowData is STRINGIFIED JSON
+
+curl -X POST "https://flowise.cbass.space/api/v1/chatflows" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $FLOWISE_API_KEY" \
+  -d @wrapped-flow.json
+```
+
+**Wrapper script**: `X:\GitHub\CBass\wrap_flowise.ps1` converts raw exports to API format.
+
+**To investigate**:
+- [ ] Check Flowise version and compare to latest
+- [ ] Look at Flowise container logs during import attempt
+- [ ] Check if this is a known bug in Flowise GitHub issues
+- [ ] Consider updating Flowise Docker image
+
+### Template Import Note
+
+The `flowise-masterclass` templates use invalid model names like `gpt-4.1-mini` (doesn't exist). Fixed version uses `gpt-4o-mini`.
+
 ## Infrastructure
 
 - **Domain**: `cbass.space` - registered and managed at Amazon (Route 53)
