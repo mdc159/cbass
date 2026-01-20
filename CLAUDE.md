@@ -110,18 +110,32 @@ n8n_assign_credential    - Assign credential to workflow nodes
 3. Fix node type validation against actual n8n node catalog
 4. Update `.mcp.json` to use local fork
 
-## Flowise Issues (Needs Investigation)
+## Flowise Issues
 
-### Issue: UI Import Broken
+### UI Import Fix Applied
 
-The Flowise UI "Load Chatflow" feature fails silently for both agentflows and chatflows. The error flashes too quickly to read. Even re-importing a flow that was just exported fails.
+The Flowise UI "Load Chatflow" feature was failing silently due to volume permissions and upload size limits. The following fixes were applied:
 
-**Symptoms**:
-- Import button shows brief error, then nothing happens
-- Browser console only shows aria-hidden accessibility warning (not the real error)
-- Affects all JSON files, including ones exported from the same Flowise instance
+**Changes made**:
+1. **Named volume**: Changed from `~/.flowise:/root/.flowise` to `flowise:/root/.flowise` (uses Docker named volume, fixes UID/GID mismatch)
+2. **File size limit**: Added `FLOWISE_FILE_SIZE_LIMIT=50mb` environment variable
+3. **Caddy body limit**: Added `request_body { max_size 50MB }` to Caddyfile for Flowise route
 
-**Workaround**: Use the API directly with a wrapped format:
+**VPS Migration Required**: When deploying to VPS, existing Flowise data needs to be migrated:
+```bash
+# 1. Backup existing data before deployment
+cp -r ~/.flowise ~/flowise-backup-$(date +%Y%m%d)
+
+# 2. After git pull and restart, if Flowise appears empty:
+docker volume inspect localai_flowise
+sudo cp -r ~/flowise-backup-*/* /var/lib/docker/volumes/localai_flowise/_data/
+sudo chown -R 1000:1000 /var/lib/docker/volumes/localai_flowise/_data/
+docker compose -p localai restart flowise
+```
+
+### Fallback: API Import
+
+If UI import still fails, the API workaround remains available:
 
 ```bash
 # The raw export format {nodes, edges} doesn't work
@@ -134,12 +148,6 @@ curl -X POST "https://flowise.cbass.space/api/v1/chatflows" \
 ```
 
 **Wrapper script**: `X:\GitHub\CBass\wrap_flowise.ps1` converts raw exports to API format.
-
-**To investigate**:
-- [ ] Check Flowise version and compare to latest
-- [ ] Look at Flowise container logs during import attempt
-- [ ] Check if this is a known bug in Flowise GitHub issues
-- [ ] Consider updating Flowise Docker image
 
 ### Template Import Note
 

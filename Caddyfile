@@ -24,6 +24,9 @@ www.cbass.space {
 
 # Flowise
 {$FLOWISE_HOSTNAME} {
+    request_body {
+        max_size 50MB
+    }
     reverse_proxy flowise:3001
 }
 
