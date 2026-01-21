@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "n8n-mcp": {
+      "command": "node",
+      "args": ["./vendor/n8n-mcp/dist/index.js"],
+      "cwd": "/path/to/CBass",
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://n8n.cbass.space",
+        "N8N_API_KEY": "your-n8n-api-key"
+      }
+    },
+    "flowise": {
+      "command": "python",
+      "args": ["-m", "mcp_flowise_enhanced"],
+      "cwd": "/path/to/CBass/mcp/flowise-enhanced",
+      "env": {
+        "FLOWISE_API_KEY": "your-flowise-api-key",
+        "FLOWISE_API_ENDPOINT": "https://flowise.cbass.space"
+      }
+    }
+  }
+}

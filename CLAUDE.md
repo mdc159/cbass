@@ -61,17 +61,19 @@ Use the `/onboard` command to quickly load project context:
 ## Current Todo
 
 ### In Progress
-- [ ] Fork n8n-mcp to add credential management tools (see `issues/n8n-mcp-issues.md`)
+- [ ] Create n8n owner account (user management was reset)
 
 ### Next Up
-- [ ] Create n8n owner account (user management was reset)
 - [ ] Re-import backed up workflow from `/tmp/n8n-backup.json`
 - [ ] Write services overview tutorial for biology student
 - [ ] First biology project: Build a simple n8n workflow
 
 ### Completed
+- [x] Fork n8n-mcp to add credential management tools (see `docs/n8n-mcp-credential-tools.md`)
+  - [x] Added 5 credential tools: list, get, schema, test, assign
+  - [x] Set up as git submodule in `vendor/n8n-mcp`
 - [x] MCP servers configured and working
-  - [x] n8n-mcp configured with Windows `cmd /c` wrapper
+  - [x] n8n-mcp configured (forked with credential tools)
   - [x] mcp-flowise configured
   - [x] flowise-enhanced local MCP server created
 - [x] n8n-mcp issues investigated (see `issues/n8n-mcp-issues.md`)
@@ -99,28 +101,24 @@ The MCP returns node information for types that don't exist or have incorrect ca
 
 **Workaround**: Use `search_nodes` to verify node existence before using. The only Google Gemini node available is `@n8n/n8n-nodes-langchain.lmChatGoogleGemini` (a language model node for agents/chains).
 
-### Issue 2: No Credential Management Tools
+### Issue 2: No Credential Management Tools - RESOLVED
 
-The n8n API supports credential operations, but n8n-mcp doesn't expose them:
+**Status**: ✅ Fixed in forked n8n-mcp (see `docs/n8n-mcp-credential-tools.md`)
 
-**Missing tools needed**:
+The forked n8n-mcp in `vendor/n8n-mcp` adds 5 credential management tools:
+
+| Tool | Purpose |
+|------|---------|
+| `n8n_list_credentials` | List all credentials (metadata only, never secrets) |
+| `n8n_get_credential` | Get credential metadata by ID |
+| `n8n_get_credential_schema` | Get schema for credential type |
+| `n8n_test_credential` | Test if credential exists |
+| `n8n_assign_credential` | Assign credential to workflow node |
+
+**Example usage**:
 ```
-n8n_list_credentials     - List all credentials (id, name, type)
-n8n_get_credential       - Get credential metadata by ID
-n8n_assign_credential    - Assign credential to workflow nodes
-```
-
-**Current workaround**: Manually look up credential IDs in n8n UI, then use `n8n_update_partial_workflow` with:
-```json
-{
-  "type": "updateNode",
-  "nodeName": "OpenAI Chat Model",
-  "updates": {
-    "credentials": {
-      "openAiApi": { "id": "CREDENTIAL_ID", "name": "OpenAI" }
-    }
-  }
-}
+n8n_list_credentials({})
+n8n_assign_credential({ workflowId: "abc", nodeName: "OpenAI Chat Model", credentialId: "xyz", credentialType: "openAiApi" })
 ```
 
 ### Known Credential IDs (CBass Instance)
@@ -129,13 +127,6 @@ n8n_assign_credential    - Assign credential to workflow nodes
 |---------|---------------|-----------------|
 | OpenAI | `t6PNOhqfMP9ssxHr` | `openAiApi` |
 | Google Gemini | `UwcFmvOdHdi8YhPh` | `googlePalmApi` |
-
-### Proposed Fix: Fork n8n-mcp
-
-1. Fork https://github.com/czlonkowski/n8n-mcp
-2. Add credential management tools to `src/mcp/tools-n8n-manager.ts`
-3. Fix node type validation against actual n8n node catalog
-4. Update `.mcp.json` to use local fork
 
 ## Flowise MCP Server
 
