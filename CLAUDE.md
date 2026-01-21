@@ -133,21 +133,49 @@ sudo chown -R 1000:1000 /var/lib/docker/volumes/localai_flowise/_data/
 docker compose -p localai restart flowise
 ```
 
-### Fallback: API Import
+### Import Methods
 
-If UI import still fails, the API workaround remains available:
+Flowise has two different import mechanisms:
 
-```bash
-# The raw export format {nodes, edges} doesn't work
-# Must wrap as {name, flowData, type} where flowData is STRINGIFIED JSON
+| Method | Location | Format Required | Saves to DB | Notes |
+|--------|----------|-----------------|-------------|-------|
+| **Load Data** | Settings → Load Data | ExportData (15 arrays) | YES | **RECOMMENDED** |
+| **Load Chatflow** | Canvas → Settings → Load | Raw `{nodes, edges}` | NO | Errors silently, canvas only |
 
-curl -X POST "https://flowise.cbass.space/api/v1/chatflows" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $FLOWISE_API_KEY" \
-  -d @wrapped-flow.json
+**Recommendation**: Always use **Settings → Load Data** for reliable imports. The "Load Chatflow" button only loads into the visual canvas without saving, and errors fail silently.
+
+### ExportData Format
+
+The full ExportData format (used by "Export All" and "Load Data"):
+
+```json
+{
+  "AgentFlow": [],
+  "AgentFlowV2": [{ "id": "uuid", "name": "...", "flowData": "stringified JSON", "type": "AGENTFLOW" }],
+  "ChatFlow": [{ "id": "uuid", "name": "...", "flowData": "stringified JSON", "type": "CHATFLOW" }],
+  "Tool": [{ "name": "...", "description": "...", "schema": "...", "func": "..." }],
+  ...15 total arrays...
+}
 ```
 
-**Wrapper script**: `X:\GitHub\CBass\wrap_flowise.ps1` converts raw exports to API format.
+### Wrapper Script
+
+The `wrap_flowise.ps1` script converts raw workflow files to ExportData format:
+
+```powershell
+# Convert all files in directory (creates flowise-import.json)
+.\wrap_flowise.ps1 -Path "flowise"
+
+# Convert single file (creates *-exportdata.json)
+.\wrap_flowise.ps1 -Path "flowise\MyWorkflow.json"
+
+# Then import via: Settings → Load Data
+```
+
+**Auto-detection**: The script detects flow type based on node types:
+- Nodes with `type: "agentFlow"` or `type: "iteration"` → AgentFlowV2
+- Nodes with `type: "customNode"` → ChatFlow
+- Files with `func` and `schema` → Tool
 
 ### Template Import Note
 

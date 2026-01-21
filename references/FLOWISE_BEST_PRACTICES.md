@@ -744,6 +744,122 @@ BLOB_STORAGE_PATH=/root/.flowise/storage
 
 ---
 
+## Import/Export Procedures
+
+### Exporting Workflows
+
+**Single Flow Export** (from canvas menu):
+- Downloads raw `{nodes, edges}` JSON
+- Does NOT include metadata (name, type, id)
+- Cannot be directly imported via "Load Data"
+- Use only for sharing flow structure
+
+**Export All** (Settings → Export Data):
+- Downloads complete `ExportData.json` with all flows, tools, variables
+- Includes full metadata for each item
+- Preferred format for backups and migration
+- Can be imported via "Load Data"
+
+### Importing Workflows
+
+**Recommended: Settings → Load Data**
+```
+Settings (gear icon) → Load Data → Select JSON file
+```
+- Accepts ExportData format (from "Export All" or `wrap_flowise.ps1`)
+- Persists to database immediately
+- Shows import errors clearly
+- Handles all types: ChatFlows, AgentFlows, Tools, Variables
+
+**Not Recommended: Canvas → Load Chatflow**
+- Only loads flow into visual canvas (doesn't save to database)
+- Errors fail silently (check browser DevTools console)
+- Requires raw `{nodes, edges}` format
+- Must manually save after loading
+
+### Converting Raw Exports to ExportData Format
+
+Use the CBass `wrap_flowise.ps1` script:
+
+```powershell
+# Convert all files in flowise directory
+.\wrap_flowise.ps1 -Path "flowise"
+# Output: flowise/flowise-import.json
+
+# Convert single file
+.\wrap_flowise.ps1 -Path "flowise\MyWorkflow.json"
+# Output: flowise/MyWorkflow-exportdata.json
+
+# Then import via: Settings → Load Data
+```
+
+The script:
+- Auto-detects flow type (AgentFlow vs ChatFlow) from node types
+- Generates proper UUIDs for each flow
+- Recognizes and includes Tool files
+- Creates ExportData format with all 15 required arrays
+
+### ExportData Format Reference
+
+```json
+{
+  "AgentFlow": [],
+  "AgentFlowV2": [
+    {
+      "id": "uuid-string",
+      "name": "Flow Name",
+      "flowData": "{\"nodes\":[...],\"edges\":[...]}",
+      "type": "AGENTFLOW"
+    }
+  ],
+  "ChatFlow": [...],
+  "Tool": [
+    {
+      "name": "tool_name",
+      "description": "Tool description",
+      "schema": "[{\"property\":\"input\",\"type\":\"string\"}]",
+      "func": "// JavaScript function code"
+    }
+  ],
+  "AssistantFlow": [],
+  "AssistantCustom": [],
+  "AssistantOpenAI": [],
+  "AssistantAzure": [],
+  "ChatMessage": [],
+  "ChatMessageFeedback": [],
+  "CustomTemplate": [],
+  "DocumentStore": [],
+  "DocumentStoreFileChunk": [],
+  "Execution": [],
+  "Variable": []
+}
+```
+
+### Backup Strategy
+
+1. **Regular exports**: Use "Export All" from Settings periodically
+2. **Version control**: Store ExportData.json files in git
+3. **VPS backup**: Backup Docker volume directly
+   ```bash
+   # Create backup
+   docker cp flowise:/root/.flowise ./flowise-backup-$(date +%Y%m%d)
+
+   # Restore if needed
+   docker cp ./flowise-backup-YYYYMMDD/. flowise:/root/.flowise/
+   docker compose -p localai restart flowise
+   ```
+
+### Troubleshooting Import Issues
+
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| "Load Chatflow" does nothing | Silent JSON parse error | Check browser DevTools console |
+| Flow loads but doesn't save | Using canvas load, not "Load Data" | Use Settings → Load Data instead |
+| Import shows error | Invalid format | Convert to ExportData format first |
+| Duplicate flows after import | Same flow imported multiple times | Delete duplicates in UI |
+
+---
+
 ## Resources
 
 - **Video Tutorial:** [Flowise Masterclass 2025](https://youtu.be/9TaRksXuLWY)
