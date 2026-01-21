@@ -61,11 +61,7 @@ Use the `/onboard` command to quickly load project context:
 ## Current Todo
 
 ### In Progress
-- [ ] Set up MCP servers for Claude Code integration
-  - [x] n8n-mcp configured (`.mcp.json` created with API key)
-  - [x] mcp-flowise configured (API key added)
-  - [ ] Install n8n-skills plugin (`/plugin install czlonkowski/n8n-skills`)
-  - [ ] Restart Claude Code to load MCP servers
+- [ ] Fork n8n-mcp to add credential management tools (see `issues/n8n-mcp-issues.md`)
 
 ### Next Up
 - [ ] Create n8n owner account (user management was reset)
@@ -74,6 +70,11 @@ Use the `/onboard` command to quickly load project context:
 - [ ] First biology project: Build a simple n8n workflow
 
 ### Completed
+- [x] MCP servers configured and working
+  - [x] n8n-mcp configured with Windows `cmd /c` wrapper
+  - [x] mcp-flowise configured
+  - [x] flowise-enhanced local MCP server created
+- [x] n8n-mcp issues investigated (see `issues/n8n-mcp-issues.md`)
 - [x] Documentation restructured (consolidated 5 deployment guides, added 11 service docs)
 - [x] Onboarding skill created (`/onboard` command)
 - [x] Video landing page added to dashboard
@@ -234,6 +235,115 @@ The MCP server is configured in `.mcp.json`:
 | Test chatflows | Verify chatflow works before UI testing |
 | Batch questions | Script multiple questions to a chatflow |
 
+## Flowise Enhanced MCP Server
+
+The `flowise-enhanced` server (local) provides workflow validation, wrapping, and creation capabilities that complement the basic `mcp-flowise` server.
+
+### Quick Reference
+
+| Tool | Purpose | Key Parameters |
+|------|---------|----------------|
+| `validate_workflow` | Local + server-side validation | `workflow`, `chatflow_id`, `strict` |
+| `wrap_workflow` | Convert raw workflow to ExportData | `workflow`, `name`, `generate_id` |
+| `create_chatflow` | Create workflow via API | `workflow`, `name`, `deployed`, `validate_first` |
+| `import_workflow` | Import ExportData via API | `exportdata` |
+| `list_chatflows` | List all chatflows with details | None |
+| `get_chatflow` | Get chatflow details | `chatflow_id` |
+
+### Tool Details
+
+#### `validate_workflow`
+
+Two-stage validation: fast local checks + optional server-side validation.
+
+**Local validation checks:**
+- `nodes` array exists and non-empty
+- `edges` array exists
+- Each node has: `id`, `type`, `position`, `data`
+- Each edge has: `source`, `target`, `id`
+- Edge source/target nodes exist
+- Flow type detection (CHATFLOW vs AGENTFLOW)
+- AgentFlow: Start node presence
+
+**Example:**
+```json
+{
+  "workflow": {"nodes": [...], "edges": [...]},
+  "strict": true
+}
+```
+
+#### `wrap_workflow`
+
+Converts raw workflow to ExportData format (Python port of `wrap_flowise.ps1`).
+
+**Auto-detection logic:**
+- Has `func`, `schema`, `name` → Tool
+- Any node with `type: "agentFlow"` or `type: "iteration"` → AGENTFLOW
+- Otherwise → CHATFLOW
+
+**Example:**
+```json
+{
+  "workflow": {"nodes": [...], "edges": [...]},
+  "name": "My Biology Chatbot",
+  "generate_id": true
+}
+```
+
+#### `create_chatflow`
+
+Creates workflow via Flowise API with optional validation.
+
+**Example:**
+```json
+{
+  "workflow": {"nodes": [...], "edges": [...]},
+  "name": "Cell Division Tutor",
+  "validate_first": true,
+  "deployed": false
+}
+```
+
+#### `import_workflow`
+
+Imports full ExportData via Flowise API (equivalent to Settings → Load Data).
+
+**Example:**
+```json
+{
+  "exportdata": {
+    "ChatFlow": [...],
+    "AgentFlowV2": [...],
+    "Tool": [...],
+    ...
+  }
+}
+```
+
+### Configuration
+
+Located in `.mcp.json`:
+```json
+"flowise-enhanced": {
+  "command": "python",
+  "args": ["-m", "mcp_flowise_enhanced"],
+  "cwd": "X:\\GitHub\\CBass\\mcp\\flowise-enhanced",
+  "env": {
+    "FLOWISE_API_KEY": "...",
+    "FLOWISE_API_ENDPOINT": "https://flowise.cbass.space"
+  }
+}
+```
+
+### Setup
+
+```bash
+cd mcp/flowise-enhanced
+pip install -e .
+# Then restart Claude Code
+```
+
 ## Flowise Issues
 
 ### UI Import Fix Applied
@@ -387,6 +497,8 @@ CBass/
 ├── n8n/backup/             # Pre-built RAG workflows
 ├── n8n-tool-workflows/     # Additional workflow imports
 ├── flowise/                # Flowise tools & chatflows
+├── mcp/                    # Local MCP servers
+│   └── flowise-enhanced/   # Flowise validation/wrapping MCP
 ├── searxng/                # SearXNG config (generated)
 └── .claude/                # Claude Code config
     ├── agents/            # LSP-aware agents

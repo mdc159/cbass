@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-flowise-enhanced"
+version = "0.1.0"
+description = "Enhanced Flowise MCP server with workflow validation, wrapping, and creation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "mcp[cli]>=1.2.0",
+    "requests>=2.28.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+mcp-flowise-enhanced = "mcp_flowise_enhanced:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mcp_flowise_enhanced"]
