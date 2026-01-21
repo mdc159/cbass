@@ -148,6 +148,38 @@ class FlowiseClient:
         """Get tool by ID."""
         return self._request("GET", f"/api/v1/tools/{tool_id}")
 
+    # Node schemas
+
+    def list_nodes(self) -> list[dict[str, Any]]:
+        """List all available node types with their schemas.
+
+        Returns:
+            List of node definitions with inputParams, inputAnchors, outputAnchors
+        """
+        return self._request("GET", "/api/v1/nodes")
+
+    def get_node(self, name: str) -> dict[str, Any]:
+        """Get schema for a specific node type.
+
+        Args:
+            name: Node name (e.g., 'chatOllama', 'toolAgent')
+
+        Returns:
+            Node definition with full schema
+        """
+        return self._request("GET", f"/api/v1/nodes/{name}")
+
+    def get_nodes_by_category(self, category: str) -> list[dict[str, Any]]:
+        """Get all nodes in a specific category.
+
+        Args:
+            category: Category name (e.g., 'Chat Models', 'Agents', 'Tools')
+
+        Returns:
+            List of nodes in that category
+        """
+        return self._request("GET", f"/api/v1/nodes/category/{category}")
+
     # Predictions
 
     def create_prediction(

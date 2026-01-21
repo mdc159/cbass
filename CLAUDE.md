@@ -69,13 +69,16 @@ Use the `/onboard` command to quickly load project context:
 - [ ] First biology project: Build a simple n8n workflow
 
 ### Completed
+- [x] Add node building tools to flowise-enhanced MCP server
+  - [x] Added 4 new tools: `list_node_types`, `get_node_schema`, `create_node`, `create_edge`
+  - [x] Nodes can now be built programmatically with full UI schema
 - [x] Fork n8n-mcp to add credential management tools (see `docs/n8n-mcp-credential-tools.md`)
   - [x] Added 5 credential tools: list, get, schema, test, assign
   - [x] Set up as git submodule in `vendor/n8n-mcp`
 - [x] MCP servers configured and working
   - [x] n8n-mcp configured (forked with credential tools)
   - [x] mcp-flowise configured
-  - [x] flowise-enhanced local MCP server created
+  - [x] flowise-enhanced local MCP server created (11 tools total)
 - [x] n8n-mcp issues investigated (see `issues/n8n-mcp-issues.md`)
 - [x] Documentation restructured (consolidated 5 deployment guides, added 11 service docs)
 - [x] Onboarding skill created (`/onboard` command)
@@ -136,6 +139,10 @@ Unified local MCP server for all Flowise operations - chatflow querying, workflo
 
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
+| `list_node_types` | Get catalog of available nodes | `category`, `search`, `refresh` |
+| `get_node_schema` | Get complete schema for a node type | `node_name`, `summary` |
+| `create_node` | Build properly structured node from schema | `node_name`, `position`, `inputs`, `index` |
+| `create_edge` | Build edge between two nodes | `source_node`, `target_node`, `target_input` |
 | `create_prediction` | Send questions to chatflows | `question`, `chatflow_id`, `history` |
 | `list_chatflows` | List all chatflows | None |
 | `get_chatflow` | Get chatflow details | `chatflow_id` |
@@ -145,6 +152,88 @@ Unified local MCP server for all Flowise operations - chatflow querying, workflo
 | `import_workflow` | Import ExportData via API | `exportdata` |
 
 ### Tool Details
+
+#### `list_node_types`
+
+Get catalog of available Flowise node types with basic metadata. Use to discover what nodes are available for building workflows.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `category` | string | No | Filter by category (e.g., 'Chat Models', 'Agents', 'Tools', 'Memory') |
+| `search` | string | No | Search nodes by name, label, or description |
+| `refresh` | boolean | No | Force refresh from API (default: use cache) |
+
+**Example:**
+```json
+{
+  "category": "Chat Models"
+}
+```
+
+**Returns:** List of nodes with `name`, `label`, `category`, `description`, `version`, `baseClasses`, plus `available_categories` list.
+
+#### `get_node_schema`
+
+Get complete schema for a specific Flowise node type. Returns inputParams, inputAnchors, outputAnchors needed for building nodes.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `node_name` | string | Yes | Node name (e.g., 'chatOllama', 'toolAgent', 'bufferMemory') |
+| `summary` | boolean | No | Return simplified summary instead of full schema |
+
+**Example:**
+```json
+{
+  "node_name": "chatOllama",
+  "summary": true
+}
+```
+
+#### `create_node`
+
+Build a properly structured Flowise node instance from schema. Creates a complete node with all required fields for UI rendering.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `node_name` | string | Yes | Node type name (e.g., 'chatOllama', 'toolAgent') |
+| `position` | object | No | Node position `{x: number, y: number}` |
+| `inputs` | object | No | Input values to set (e.g., `{modelName: 'qwen2.5:latest'}`) |
+| `node_id` | string | No | Custom node ID (auto-generated if not provided) |
+| `index` | integer | No | Index for auto-generated ID (e.g., 0 for chatOllama_0) |
+
+**Example:**
+```json
+{
+  "node_name": "chatOllama",
+  "position": {"x": 200, "y": 100},
+  "inputs": {"modelName": "qwen2.5:latest", "temperature": 0.7}
+}
+```
+
+**Returns:** Complete node structure with `inputParams`, `inputAnchors`, `outputAnchors`, and proper IDs for Flowise UI.
+
+#### `create_edge`
+
+Build a properly structured edge connecting two Flowise nodes. Validates anchor compatibility and generates proper handle IDs.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `source_node` | object | Yes | Source node instance (from create_node result) |
+| `target_node` | object | Yes | Target node instance (from create_node result) |
+| `target_input` | string | Yes | Name of input anchor on target (e.g., 'model', 'tools', 'memory') |
+| `source_output` | string | No | Name of output anchor on source (auto-detected if not provided) |
+| `validate_only` | boolean | No | Only validate connection, don't create edge |
+
+**Example:**
+```json
+{
+  "source_node": {"id": "chatOllama_0", "data": {...}},
+  "target_node": {"id": "toolAgent_0", "data": {...}},
+  "target_input": "model"
+}
+```
+
+**Returns:** Edge structure with `source`, `target`, `sourceHandle`, `targetHandle`, plus type compatibility validation.
 
 #### `create_prediction`
 
