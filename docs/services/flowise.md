@@ -73,6 +73,17 @@ Auto-detects flow type:
 - `type: "customNode"` nodes → ChatFlow
 - Files with `func` and `schema` → Tool
 
+### Working Examples
+
+The `flowise/` directory contains wrapped examples ready for import:
+
+| File | Type | Description |
+|------|------|-------------|
+| `Deep Research Tutorial Agents-wrapped.json` | AgentFlowV2 | Multi-agent research workflow |
+| `Web Search + n8n Agent Chatflow-wrapped.json` | ChatFlow | Web search with n8n integration |
+
+These demonstrate the correct ExportData format output from `wrap_flowise.ps1`. Import via Settings > Load Data.
+
 ## Integration with Other Services
 
 | Connects To | Purpose | Configuration |
