@@ -1,17 +1,18 @@
-# Flowise Enhanced MCP Server
+# Flowise MCP Server
 
-Local MCP server that adds workflow validation, wrapping, and creation capabilities for Flowise.
+Unified local MCP server for all Flowise operations - workflow management, validation, and chatflow querying.
 
 ## Features
 
 | Tool | Purpose |
 |------|---------|
+| `create_prediction` | Send questions to chatflows and get AI responses |
+| `list_chatflows` | List all chatflows with details |
+| `get_chatflow` | Get detailed chatflow information |
 | `validate_workflow` | Local structural validation + optional server-side validation |
 | `wrap_workflow` | Convert raw workflow (nodes/edges) to ExportData format |
 | `create_chatflow` | Create workflow via Flowise API with validation |
 | `import_workflow` | Import ExportData directly via Flowise API |
-| `list_chatflows` | List all chatflows with details |
-| `get_chatflow` | Get detailed chatflow information |
 
 ## Installation
 
@@ -25,7 +26,7 @@ pip install -e .
 Add to `.mcp.json`:
 
 ```json
-"flowise-enhanced": {
+"flowise": {
   "command": "python",
   "args": ["-m", "mcp_flowise_enhanced"],
   "cwd": "X:\\GitHub\\CBass\\mcp\\flowise-enhanced",
@@ -37,6 +38,23 @@ Add to `.mcp.json`:
 ```
 
 ## Tool Details
+
+### create_prediction
+
+Send a question to a Flowise chatflow and get an AI response.
+
+**Parameters:**
+- `question` (string, required): The question or prompt to send
+- `chatflow_id` (string, required): The chatflow ID to query
+- `history` (array, optional): Conversation history as `[{role, content}, ...]`
+
+**Example:**
+```json
+{
+  "question": "What is photosynthesis?",
+  "chatflow_id": "abc-123-def"
+}
+```
 
 ### validate_workflow
 

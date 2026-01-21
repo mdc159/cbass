@@ -1,10 +1,13 @@
-"""MCP server for enhanced Flowise workflow operations.
+"""MCP server for Flowise workflow operations.
 
 Provides tools for:
 - validate_workflow: Local + server-side validation
 - wrap_workflow: Convert raw workflow to ExportData format
 - create_chatflow: Create workflow via Flowise API
 - import_workflow: Import ExportData via Flowise API
+- list_chatflows: List all chatflows
+- get_chatflow: Get chatflow details
+- create_prediction: Send questions to chatflows and get AI responses
 """
 
 import json
@@ -158,6 +161,38 @@ async def list_tools() -> list[Tool]:
                 "required": ["chatflow_id"],
             },
         ),
+        Tool(
+            name="create_prediction",
+            description=(
+                "Send a question to a Flowise chatflow and get an AI response. "
+                "Use list_chatflows to find available chatflow IDs."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "The question or prompt to send to the chatflow",
+                    },
+                    "chatflow_id": {
+                        "type": "string",
+                        "description": "The chatflow ID to query (use list_chatflows to find IDs)",
+                    },
+                    "history": {
+                        "type": "array",
+                        "description": "Optional conversation history as array of {role, content} objects",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "role": {"type": "string"},
+                                "content": {"type": "string"},
+                            },
+                        },
+                    },
+                },
+                "required": ["question", "chatflow_id"],
+            },
+        ),
     ]
 
 
@@ -177,6 +212,8 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             return await handle_list_chatflows(arguments)
         elif name == "get_chatflow":
             return await handle_get_chatflow(arguments)
+        elif name == "create_prediction":
+            return await handle_create_prediction(arguments)
         else:
             return _json_result({"error": f"Unknown tool: {name}"})
     except Exception as e:
@@ -338,6 +375,42 @@ async def handle_get_chatflow(args: dict[str, Any]) -> list[TextContent]:
             "success": True,
             "chatflow": chatflow,
         })
+    except Exception as e:
+        return _json_result({"success": False, "error": str(e)})
+
+
+async def handle_create_prediction(args: dict[str, Any]) -> list[TextContent]:
+    """Handle create_prediction tool call."""
+    question = args.get("question")
+    chatflow_id = args.get("chatflow_id")
+    history = args.get("history")
+
+    if not question:
+        return _json_result({"success": False, "error": "question is required"})
+    if not chatflow_id:
+        return _json_result({"success": False, "error": "chatflow_id is required"})
+
+    try:
+        client = FlowiseClient()
+        response = client.create_prediction(
+            chatflow_id=chatflow_id,
+            question=question,
+            history=history,
+        )
+
+        # Extract the text response
+        result: dict[str, Any] = {"success": True}
+
+        if isinstance(response, dict):
+            # Standard response format
+            result["text"] = response.get("text", response.get("response", str(response)))
+            if "sourceDocuments" in response:
+                result["sourceDocuments"] = response["sourceDocuments"]
+        else:
+            # String response
+            result["text"] = str(response)
+
+        return _json_result(result)
     except Exception as e:
         return _json_result({"success": False, "error": str(e)})
 

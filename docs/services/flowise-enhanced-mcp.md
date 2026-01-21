@@ -1,19 +1,19 @@
-# Flowise Enhanced MCP Server
+# Flowise MCP Server
 
-> Local MCP server providing workflow validation, wrapping, and creation capabilities for Flowise.
+> Unified local MCP server for all Flowise operations - chatflow querying, workflow management, and validation.
 
 ## Overview
 
-The `flowise-enhanced` MCP server complements the existing `mcp-flowise` server by adding workflow management capabilities that were previously missing:
+The `flowise` MCP server provides complete Flowise integration:
 
-| Capability | mcp-flowise | flowise-enhanced |
-|------------|-------------|------------------|
-| List chatflows | Yes | Yes (enhanced) |
-| Query chatflows | Yes | Yes |
-| Validate workflows | No | **Yes** |
-| Wrap raw workflows | No | **Yes** |
-| Create chatflows via API | No | **Yes** |
-| Import ExportData | No | **Yes** |
+| Capability | Description |
+|------------|-------------|
+| Query chatflows | Send questions and get AI responses |
+| List/Get chatflows | Browse and inspect chatflows |
+| Validate workflows | Local structural + server-side validation |
+| Wrap raw workflows | Convert to ExportData format |
+| Create chatflows via API | Programmatic workflow creation |
+| Import ExportData | Bulk import workflows/tools |
 
 ## Installation
 
@@ -29,7 +29,7 @@ pip install -e mcp/flowise-enhanced
 Added to `.mcp.json`:
 
 ```json
-"flowise-enhanced": {
+"flowise": {
   "command": "python",
   "args": ["-m", "mcp_flowise_enhanced"],
   "cwd": "X:\\GitHub\\CBass\\mcp\\flowise-enhanced",
@@ -41,6 +41,36 @@ Added to `.mcp.json`:
 ```
 
 ## Tools Reference
+
+### create_prediction
+
+Send a question to a Flowise chatflow and get an AI response.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `question` | string | Yes | The question or prompt to send |
+| `chatflow_id` | string | Yes | The chatflow ID to query |
+| `history` | array | No | Conversation history as `[{role, content}, ...]` |
+
+**Example:**
+```json
+{
+  "question": "What is the function of mitochondria?",
+  "chatflow_id": "abc-123-def"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "text": "Mitochondria are often called the powerhouse of the cell...",
+  "sourceDocuments": [...]
+}
+```
+
+---
 
 ### validate_workflow
 
@@ -316,6 +346,7 @@ Both produce identical ExportData output suitable for Flowise import.
 
 | Endpoint | Method | Tool |
 |----------|--------|------|
+| `/api/v1/prediction/:id` | POST | `create_prediction` |
 | `/api/v1/chatflows` | GET | `list_chatflows` |
 | `/api/v1/chatflows/:id` | GET | `get_chatflow` |
 | `/api/v1/chatflows` | POST | `create_chatflow` |

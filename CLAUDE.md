@@ -137,120 +137,41 @@ n8n_assign_credential    - Assign credential to workflow nodes
 3. Fix node type validation against actual n8n node catalog
 4. Update `.mcp.json` to use local fork
 
-## Flowise MCP Tools
+## Flowise MCP Server
 
-The `mcp-flowise` server provides tools for interacting with Flowise chatflows programmatically.
+Unified local MCP server for all Flowise operations - chatflow querying, workflow management, and validation.
 
 ### Quick Reference
 
 | Tool | Purpose | Key Parameters |
 |------|---------|----------------|
-| `list_chatflows` | List all available chatflows | None |
-| `create_prediction` | Send a question to a chatflow | `question`, `chatflow_id` (optional) |
+| `create_prediction` | Send questions to chatflows | `question`, `chatflow_id`, `history` |
+| `list_chatflows` | List all chatflows | None |
+| `get_chatflow` | Get chatflow details | `chatflow_id` |
+| `validate_workflow` | Local + server-side validation | `workflow`, `chatflow_id`, `strict` |
+| `wrap_workflow` | Convert raw workflow to ExportData | `workflow`, `name`, `generate_id` |
+| `create_chatflow` | Create workflow via API | `workflow`, `name`, `deployed`, `validate_first` |
+| `import_workflow` | Import ExportData via API | `exportdata` |
 
 ### Tool Details
 
-#### `list_chatflows`
-
-Lists all chatflows available in the Flowise instance.
-
-```
-No parameters required
-```
-
-**Returns**: JSON array of chatflows with IDs and names.
-
-**Use when**: You need to discover available chatflows or find a chatflow ID.
-
 #### `create_prediction`
 
-Sends a question to a chatflow and returns the AI response.
+Send a question to a Flowise chatflow and get an AI response.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `question` | string | Yes | The question or prompt to send |
-| `chatflow_id` | string | No | Specific chatflow ID (uses default if not provided) |
+| `chatflow_id` | string | Yes | The chatflow ID to query |
+| `history` | array | No | Conversation history as `[{role, content}, ...]` |
 
-**Example**:
+**Example:**
 ```json
 {
   "question": "What is photosynthesis?",
   "chatflow_id": "abc-123-def"
 }
 ```
-
-**Use when**: You want to query a Flowise chatflow from Claude Code.
-
-### Usage Patterns
-
-#### Pattern 1: Discover and Query
-
-```
-1. Call list_chatflows to see available chatflows
-2. Note the chatflow_id you want to use
-3. Call create_prediction with your question and chatflow_id
-```
-
-#### Pattern 2: Use Default Chatflow
-
-If `FLOWISE_CHATFLOW_ID` is configured in the MCP settings, you can omit `chatflow_id`:
-
-```json
-{
-  "question": "Explain DNA replication"
-}
-```
-
-### Configuration
-
-The MCP server is configured in `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "mcp-flowise": {
-      "command": "uvx",
-      "args": ["mcp-flowise"],
-      "env": {
-        "FLOWISE_API_KEY": "your-api-key",
-        "FLOWISE_API_ENDPOINT": "http://localhost:3001",
-        "FLOWISE_CHATFLOW_ID": "optional-default-chatflow-id"
-      }
-    }
-  }
-}
-```
-
-### Known Limitations
-
-1. **No chatflow creation** - Cannot create or modify chatflows via MCP (use Flowise UI)
-2. **No conversation history** - Each `create_prediction` is stateless
-3. **Single response** - No streaming support
-
-### Biology Applications
-
-| Use Case | How |
-|----------|-----|
-| Quick biology Q&A | Query a biology-tuned chatflow |
-| Test chatflows | Verify chatflow works before UI testing |
-| Batch questions | Script multiple questions to a chatflow |
-
-## Flowise Enhanced MCP Server
-
-The `flowise-enhanced` server (local) provides workflow validation, wrapping, and creation capabilities that complement the basic `mcp-flowise` server.
-
-### Quick Reference
-
-| Tool | Purpose | Key Parameters |
-|------|---------|----------------|
-| `validate_workflow` | Local + server-side validation | `workflow`, `chatflow_id`, `strict` |
-| `wrap_workflow` | Convert raw workflow to ExportData | `workflow`, `name`, `generate_id` |
-| `create_chatflow` | Create workflow via API | `workflow`, `name`, `deployed`, `validate_first` |
-| `import_workflow` | Import ExportData via API | `exportdata` |
-| `list_chatflows` | List all chatflows with details | None |
-| `get_chatflow` | Get chatflow details | `chatflow_id` |
-
-### Tool Details
 
 #### `validate_workflow`
 
@@ -325,7 +246,7 @@ Imports full ExportData via Flowise API (equivalent to Settings → Load Data).
 
 Located in `.mcp.json`:
 ```json
-"flowise-enhanced": {
+"flowise": {
   "command": "python",
   "args": ["-m", "mcp_flowise_enhanced"],
   "cwd": "X:\\GitHub\\CBass\\mcp\\flowise-enhanced",
@@ -343,6 +264,15 @@ cd mcp/flowise-enhanced
 pip install -e .
 # Then restart Claude Code
 ```
+
+### Biology Applications
+
+| Use Case | How |
+|----------|-----|
+| Quick biology Q&A | Query a biology-tuned chatflow with `create_prediction` |
+| Test chatflows | Verify chatflow works before UI testing |
+| Batch questions | Script multiple questions to a chatflow |
+| Create study assistants | Use `create_chatflow` to build new chatflows programmatically |
 
 ## Flowise Issues
 

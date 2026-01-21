@@ -147,3 +147,31 @@ class FlowiseClient:
     def get_tool(self, tool_id: str) -> dict[str, Any]:
         """Get tool by ID."""
         return self._request("GET", f"/api/v1/tools/{tool_id}")
+
+    # Predictions
+
+    def create_prediction(
+        self,
+        chatflow_id: str,
+        question: str,
+        overrides: dict[str, Any] | None = None,
+        history: list[dict[str, str]] | None = None,
+    ) -> dict[str, Any]:
+        """Send a question to a chatflow and get a prediction.
+
+        Args:
+            chatflow_id: ID of the chatflow to query
+            question: The question or prompt to send
+            overrides: Optional config overrides (model, temperature, etc.)
+            history: Optional conversation history
+
+        Returns:
+            Prediction response with text and optional sourceDocuments
+        """
+        data: dict[str, Any] = {"question": question}
+        if overrides:
+            data["overrideConfig"] = overrides
+        if history:
+            data["history"] = history
+
+        return self._request("POST", f"/api/v1/prediction/{chatflow_id}", data=data)
