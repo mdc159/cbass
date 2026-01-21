@@ -34,6 +34,30 @@ The primary learner is studying **biology**, so projects and examples should int
 6. **RAG**: Build a biology study assistant with document retrieval
 7. **Advanced**: Combine multiple services into complex biology research tools
 
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+| Section | Content |
+|---------|---------|
+| [docs/getting-started/](docs/getting-started/) | Quick start, first workflow, biology projects |
+| [docs/deployment/](docs/deployment/) | Local dev and VPS deployment guides |
+| [docs/services/](docs/services/) | Per-service documentation (11 services) |
+| [docs/architecture/](docs/architecture/) | System design and diagrams |
+| [docs/operations/](docs/operations/) | Common tasks, backup, troubleshooting |
+
+### Claude Code Onboarding
+
+Use the `/onboard` command to quickly load project context:
+
+```
+/onboard           # Full project context
+/onboard n8n       # Focus on n8n workflows
+/onboard flowise   # Focus on Flowise
+/onboard deploy    # Focus on deployment
+/onboard data      # Focus on data layer
+```
+
 ## Current Todo
 
 ### In Progress
@@ -50,6 +74,8 @@ The primary learner is studying **biology**, so projects and examples should int
 - [ ] First biology project: Build a simple n8n workflow
 
 ### Completed
+- [x] Documentation restructured (consolidated 5 deployment guides, added 11 service docs)
+- [x] Onboarding skill created (`/onboard` command)
 - [x] Video landing page added to dashboard
 - [x] OpenCode service removed from dashboard
 - [x] Local/GitHub/VPS repos synced
