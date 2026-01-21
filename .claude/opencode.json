@@ -1,0 +1,44 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "theme": "opencode",
+  "autoupdate": true,
+  
+  "permission": {
+    "edit": "allow",
+    "bash": "ask",
+    "webfetch": "allow"
+  },
+  
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    }
+  },
+  
+  "plugin": [
+    "opencode-notify"
+  ],
+  
+  "agent": {
+    "deploy": {
+      "description": "Handles deployment configuration",
+      "mode": "subagent",
+      "prompt": "You are a VPS deployment specialist. Focus on production configs, deployment scripts, and security."
+    }
+  },
+  
+  "command": {
+    "deploy-prep": {
+      "description": "Prepare for VPS deployment",
+      "template": "Create all necessary files for VPS deployment including: Dockerfile, docker-compose.yml, nginx config, systemd service, and deploy.sh script.",
+      "agent": "deploy"
+    }
+  },
+  
+  "instructions": [
+    "CONTRIBUTING.md",
+    "docs/*.md"
+  ]
+}

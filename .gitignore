@@ -39,7 +39,8 @@ supabase/
 .DS_Store
 
 # Claude/Playwright MCP
-.claude/
+.claude/local/
+.claude/skills/fork-repository-skill/
 .playwright-mcp/
 
 # Temporary files
