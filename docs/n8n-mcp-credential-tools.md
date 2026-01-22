@@ -15,18 +15,42 @@ This document describes the credential management tools added to a forked versio
 
 ### Motivation
 
-The original n8n-mcp package provides comprehensive workflow management tools but lacks credential management capabilities. The n8n API supports credential operations, but n8n-mcp didn't expose them. This limitation required manual credential ID lookups in the n8n UI when assigning credentials to workflow nodes.
+The original n8n-mcp package provides comprehensive workflow management tools but lacks credential management capabilities. This fork adds credential assignment capabilities to eliminate the need for manual credential ID lookups in the n8n UI.
 
-### Key Discovery
+---
 
-During implementation, we discovered that the n8n API client (`src/services/n8n-api-client.ts`) already had credential methods implemented:
-- `listCredentials(params)`
-- `getCredential(id)`
-- `createCredential(credential)`
-- `updateCredential(id, credential)`
-- `deleteCredential(id)`
+## ⚠️ n8n API Limitation
 
-These just needed to be exposed as MCP tools with proper security measures.
+### Important: GET /credentials is Blocked by Design
+
+**n8n's Public API intentionally blocks GET requests to `/credentials` endpoints for security reasons.** This is not a configuration issue - it's a deliberate security decision by n8n.
+
+| Endpoint | Method | Status | Reason |
+|----------|--------|--------|--------|
+| `/credentials` | GET | ❌ **Blocked** | Security - prevents credential enumeration |
+| `/credentials/{id}` | GET | ❌ **Blocked** | Security - prevents credential exposure |
+| `/credentials` | POST | ✅ Works | Create new credentials |
+| `/credentials/{id}` | PATCH | ✅ Works | Update credentials |
+| `/credentials/{id}` | DELETE | ✅ Works | Delete credentials |
+| `/credentials/schema/{type}` | GET | ✅ Works | Get credential type schema |
+
+### Tool Availability
+
+| Tool | Status | Notes |
+|------|--------|-------|
+| `n8n_list_credentials` | ❌ **Non-functional** | Blocked by n8n API |
+| `n8n_get_credential` | ❌ **Non-functional** | Blocked by n8n API |
+| `n8n_test_credential` | ❌ **Non-functional** | Blocked by n8n API |
+| `n8n_get_credential_schema` | ✅ **Works** | Uses local data, not API |
+| `n8n_assign_credential` | ✅ **Works** | Skips validation, uses known IDs |
+
+### Recommended Workflow
+
+Since credential listing is blocked, use the **manual credential registry** approach:
+
+1. Look up credential IDs once in the n8n UI (Settings → Credentials)
+2. Document them in `CLAUDE.md` or this file (see "Known CBass Credentials" below)
+3. Use `n8n_assign_credential` with the known credential IDs
 
 ---
 
@@ -79,7 +103,7 @@ cp .mcp.json.example .mcp.json
   "mcpServers": {
     "n8n-mcp": {
       "command": "node",
-      "args": ["./vendor/n8n-mcp/dist/index.js"],
+      "args": ["./vendor/n8n-mcp/dist/mcp/index.js"],
       "cwd": "X:\\GitHub\\CBass",
       "env": {
         "MCP_MODE": "stdio",
@@ -99,7 +123,7 @@ cp .mcp.json.example .mcp.json
   "mcpServers": {
     "n8n-mcp": {
       "command": "node",
-      "args": ["./vendor/n8n-mcp/dist/index.js"],
+      "args": ["./vendor/n8n-mcp/dist/mcp/index.js"],
       "cwd": "/opt/cbass",
       "env": {
         "MCP_MODE": "stdio",
@@ -112,6 +136,8 @@ cp .mcp.json.example .mcp.json
   }
 }
 ```
+
+> **Note**: The entry point is `dist/mcp/index.js` (not `dist/index.js`). The `mcp/index.js` contains the `main()` function that starts the MCP server.
 
 ### Update Submodule
 
@@ -161,7 +187,9 @@ This function is called on every credential before it is returned to the user, e
 
 ## New Tools
 
-### 1. `n8n_list_credentials`
+### 1. `n8n_list_credentials` ❌
+
+> **⚠️ Non-functional**: n8n's Public API blocks GET requests to `/credentials` for security.
 
 **Purpose**: List all credentials with metadata only (never secrets).
 
@@ -172,37 +200,22 @@ This function is called on every credential before it is returned to the user, e
 | `cursor` | string | No | Pagination cursor from previous response |
 | `type` | string | No | Filter by credential type (e.g., "openAiApi", "slackApi") |
 
-**Response Fields**:
-- `id` - Credential identifier
-- `name` - Human-readable name
-- `type` - Credential type (e.g., "openAiApi", "googlePalmApi")
-- `nodesAccess` - Array of node types that can use this credential
-- `createdAt` - Creation timestamp
-- `updatedAt` - Last update timestamp
-
-**Example**:
+**Error Response**:
 ```json
 {
-  "success": true,
-  "data": {
-    "credentials": [
-      {
-        "id": "t6PNOhqfMP9ssxHr",
-        "name": "OpenAI",
-        "type": "openAiApi",
-        "createdAt": "2024-01-15T10:30:00.000Z",
-        "updatedAt": "2024-01-15T10:30:00.000Z"
-      }
-    ],
-    "returned": 1,
-    "hasMore": false
-  }
+  "success": false,
+  "error": "GET method not allowed",
+  "code": "API_ERROR"
 }
 ```
 
+**Workaround**: Use the manual credential registry in CLAUDE.md or this document.
+
 ---
 
-### 2. `n8n_get_credential`
+### 2. `n8n_get_credential` ❌
+
+> **⚠️ Non-functional**: n8n's Public API blocks GET requests to `/credentials/{id}` for security.
 
 **Purpose**: Get metadata for a specific credential by ID.
 
@@ -211,24 +224,16 @@ This function is called on every credential before it is returned to the user, e
 |-----------|------|----------|-------------|
 | `id` | string | Yes | Credential ID to retrieve |
 
-**Response**: Same fields as `n8n_list_credentials` for a single credential.
-
-**Example**:
+**Error Response**:
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "t6PNOhqfMP9ssxHr",
-    "name": "OpenAI",
-    "type": "openAiApi",
-    "nodesAccess": [
-      { "nodeType": "n8n-nodes-base.openAi" }
-    ],
-    "createdAt": "2024-01-15T10:30:00.000Z",
-    "updatedAt": "2024-01-15T10:30:00.000Z"
-  }
+  "success": false,
+  "error": "GET method not allowed",
+  "code": "API_ERROR"
 }
 ```
+
+**Workaround**: Look up credential details in n8n UI (Settings → Credentials).
 
 ---
 
@@ -276,7 +281,9 @@ This function is called on every credential before it is returned to the user, e
 
 ---
 
-### 4. `n8n_test_credential`
+### 4. `n8n_test_credential` ❌
+
+> **⚠️ Non-functional**: Depends on `n8n_get_credential` which is blocked.
 
 **Purpose**: Test if a credential exists and is accessible.
 
@@ -285,30 +292,22 @@ This function is called on every credential before it is returned to the user, e
 |-----------|------|----------|-------------|
 | `id` | string | Yes | Credential ID to test |
 
-**Limitation**: The n8n public API does not expose a direct credential testing endpoint. This tool verifies the credential exists but cannot test if it actually authenticates with the external service.
-
-**Response**:
+**Error Response**:
 ```json
 {
-  "success": true,
-  "data": {
-    "credential": {
-      "id": "t6PNOhqfMP9ssxHr",
-      "name": "OpenAI",
-      "type": "openAiApi"
-    },
-    "status": "exists",
-    "message": "Credential exists and is accessible. Note: To fully test the credential, use it in a workflow execution.",
-    "hint": "The n8n API does not expose a direct credential testing endpoint."
-  }
+  "success": false,
+  "error": "GET method not allowed",
+  "code": "API_ERROR"
 }
 ```
 
+**Workaround**: Test credentials by running a workflow that uses them.
+
 ---
 
-### 5. `n8n_assign_credential`
+### 5. `n8n_assign_credential` ✅
 
-**Purpose**: Assign a credential to a workflow node. This is the most practical tool - it eliminates the need to manually look up credential IDs and construct update operations.
+**Purpose**: Assign a credential to a workflow node. This is the **primary working tool** - use it with known credential IDs from the manual registry.
 
 **Parameters**:
 | Parameter | Type | Required | Description |
@@ -317,11 +316,9 @@ This function is called on every credential before it is returned to the user, e
 | `nodeName` | string | Yes | Name of the node to assign the credential to |
 | `credentialId` | string | Yes | Credential ID to assign |
 | `credentialType` | string | Yes | Credential type (must match the node's expected type) |
+| `credentialName` | string | No | Display name for the credential (defaults to `"{type} credential"`) |
 
-**Validation**:
-- Verifies the credential exists before assignment
-- Validates that the credential type matches the requested type
-- Returns a clear error if there's a type mismatch
+**Note**: This tool skips credential validation because n8n's API blocks GET requests. It trusts the provided credential ID. Use the known credential IDs from the registry below.
 
 **Example**:
 ```json
@@ -330,7 +327,8 @@ This function is called on every credential before it is returned to the user, e
   "workflowId": "CYfLRw6IPTJ7tfcD",
   "nodeName": "OpenAI Chat Model",
   "credentialId": "t6PNOhqfMP9ssxHr",
-  "credentialType": "openAiApi"
+  "credentialType": "openAiApi",
+  "credentialName": "OpenAI API"
 }
 
 // Response
@@ -341,23 +339,24 @@ This function is called on every credential before it is returned to the user, e
     "nodeName": "OpenAI Chat Model",
     "credential": {
       "id": "t6PNOhqfMP9ssxHr",
-      "name": "OpenAI",
+      "name": "OpenAI API",
       "type": "openAiApi"
     }
   },
-  "message": "Successfully assigned credential \"OpenAI\" to node \"OpenAI Chat Model\" in workflow CYfLRw6IPTJ7tfcD"
+  "message": "Successfully assigned credential \"OpenAI API\" to node \"OpenAI Chat Model\" in workflow CYfLRw6IPTJ7tfcD"
 }
 ```
 
-**Type Mismatch Error**:
+**Node Not Found Error**:
 ```json
 {
   "success": false,
-  "error": "Credential type mismatch",
+  "error": "Failed to assign credential to node",
   "details": {
-    "expected": "slackApi",
-    "actual": "openAiApi",
-    "hint": "The credential \"OpenAI\" is of type \"openAiApi\", not \"slackApi\". Use the correct credential type."
+    "workflowId": "CYfLRw6IPTJ7tfcD",
+    "nodeName": "Nonexistent Node",
+    "credentialId": "t6PNOhqfMP9ssxHr",
+    "hint": "Verify the workflow ID and node name are correct. The node must exist in the workflow."
   }
 }
 ```
@@ -366,39 +365,54 @@ This function is called on every credential before it is returned to the user, e
 
 ## Usage Examples
 
-### List All Credentials
-```
-n8n_list_credentials({})
-```
+### ✅ Working Tools
 
-### List Only OpenAI Credentials
-```
-n8n_list_credentials({ type: "openAiApi" })
-```
-
-### Get Credential Details
-```
-n8n_get_credential({ id: "t6PNOhqfMP9ssxHr" })
-```
-
-### Get Schema for a Credential Type
+#### Get Schema for a Credential Type
 ```
 n8n_get_credential_schema({ credentialType: "openAiApi" })
 ```
 
-### Test if a Credential Exists
-```
-n8n_test_credential({ id: "t6PNOhqfMP9ssxHr" })
-```
-
-### Assign Credential to a Workflow Node
+#### Assign Credential to a Workflow Node
 ```
 n8n_assign_credential({
   workflowId: "CYfLRw6IPTJ7tfcD",
   nodeName: "OpenAI Chat Model",
   credentialId: "t6PNOhqfMP9ssxHr",
-  credentialType: "openAiApi"
+  credentialType: "openAiApi",
+  credentialName: "OpenAI API"
 })
+```
+
+#### Assign Multiple Credentials to a Workflow
+```
+// Assign OpenAI to all OpenAI Chat Model nodes
+n8n_assign_credential({
+  workflowId: "CYfLRw6IPTJ7tfcD",
+  nodeName: "OpenAI Chat Model (Planner)",
+  credentialId: "t6PNOhqfMP9ssxHr",
+  credentialType: "openAiApi",
+  credentialName: "OpenAI API"
+})
+
+// Assign Gemini to analysis nodes
+n8n_assign_credential({
+  workflowId: "CYfLRw6IPTJ7tfcD",
+  nodeName: "Gemini Model (Background)",
+  credentialId: "UwcFmvOdHdi8YhPh",
+  credentialType: "googlePalmApi",
+  credentialName: "Google Gemini"
+})
+```
+
+### ❌ Non-Working Tools (Blocked by n8n API)
+
+These tools are implemented but will return "GET method not allowed" errors:
+
+```
+n8n_list_credentials({})                              // ❌ Blocked
+n8n_list_credentials({ type: "openAiApi" })           // ❌ Blocked
+n8n_get_credential({ id: "t6PNOhqfMP9ssxHr" })        // ❌ Blocked
+n8n_test_credential({ id: "t6PNOhqfMP9ssxHr" })       // ❌ Blocked
 ```
 
 ---
@@ -474,6 +488,7 @@ const assignCredentialSchema = z.object({
   nodeName: z.string(),
   credentialId: z.string(),
   credentialType: z.string(),
+  credentialName: z.string().optional(),
 });
 ```
 
