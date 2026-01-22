@@ -104,24 +104,29 @@ The MCP returns node information for types that don't exist or have incorrect ca
 
 **Workaround**: Use `search_nodes` to verify node existence before using. The only Google Gemini node available is `@n8n/n8n-nodes-langchain.lmChatGoogleGemini` (a language model node for agents/chains).
 
-### Issue 2: No Credential Management Tools - RESOLVED
+### Issue 2: Credential Management Tools - PARTIALLY WORKING
 
-**Status**: ✅ Fixed in forked n8n-mcp (see `docs/n8n-mcp-credential-tools.md`)
+**Status**: ⚠️ Partially fixed (see `docs/n8n-mcp-credential-tools.md`)
 
-The forked n8n-mcp in `vendor/n8n-mcp` adds 5 credential management tools:
+The forked n8n-mcp in `vendor/n8n-mcp` adds 5 credential management tools, but **n8n's Public API intentionally blocks GET requests to `/credentials` endpoints for security**:
 
-| Tool | Purpose |
-|------|---------|
-| `n8n_list_credentials` | List all credentials (metadata only, never secrets) |
-| `n8n_get_credential` | Get credential metadata by ID |
-| `n8n_get_credential_schema` | Get schema for credential type |
-| `n8n_test_credential` | Test if credential exists |
-| `n8n_assign_credential` | Assign credential to workflow node |
+| Tool | Status | Notes |
+|------|--------|-------|
+| `n8n_list_credentials` | ❌ Blocked | n8n API returns "GET method not allowed" |
+| `n8n_get_credential` | ❌ Blocked | n8n API returns "GET method not allowed" |
+| `n8n_get_credential_schema` | ✅ Works | Uses local data, not API |
+| `n8n_test_credential` | ❌ Blocked | Depends on blocked GET endpoint |
+| `n8n_assign_credential` | ✅ Works | Skips validation, uses known credential IDs |
 
-**Example usage**:
+**Workaround**: Use the manual credential registry below with `n8n_assign_credential`:
 ```
-n8n_list_credentials({})
-n8n_assign_credential({ workflowId: "abc", nodeName: "OpenAI Chat Model", credentialId: "xyz", credentialType: "openAiApi" })
+n8n_assign_credential({
+  workflowId: "CYfLRw6IPTJ7tfcD",
+  nodeName: "OpenAI Chat Model",
+  credentialId: "t6PNOhqfMP9ssxHr",
+  credentialType: "openAiApi",
+  credentialName: "OpenAI API"  // optional display name
+})
 ```
 
 ### Known Credential IDs (CBass Instance)
