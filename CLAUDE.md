@@ -88,6 +88,10 @@ Use the `/onboard` command to quickly load project context:
 - [x] Added educational purpose to CLAUDE.md
 - [x] Added .env sync reminder to constraints
 - [x] UI Designer Pipeline workflow rebuilt (`CYfLRw6IPTJ7tfcD`)
+- [x] Unified .env file for local and VPS (synced via `scp cbass:/opt/cbass/.env`)
+  - [x] Fixed broken Supabase keys (ANON_KEY, SERVICE_ROLE_KEY)
+  - [x] Added KALI_HOSTNAME to both environments
+  - [x] Generated new SSH key (`~/.ssh/cbass_vps`) and updated SSH config
 
 ## n8n MCP Issues (Needs Fix)
 
@@ -567,7 +571,36 @@ Open WebUI (:8080) → n8n_pipe.py → n8n webhook (:5678)
 - Never use `@` in `POSTGRES_PASSWORD` (breaks URI parsing)
 - `.env` is gitignored - never commit secrets
 - Copy from `env.example` as template
-- **Keep local and VPS `.env` files in sync manually** (they don't sync via git)
+
+### Environment File Sync
+
+**One `.env` to rule them all** - The same `.env` file is used for both local development and VPS production. The VPS copy at `/opt/cbass/.env` is the source of truth.
+
+**Why this works:**
+- Hostnames like `n8n.cbass.space` work from anywhere (local browser hits VPS)
+- All secrets are shared between environments
+- No drift between local and production configs
+
+**Sync Commands:**
+```bash
+# Pull latest from VPS to local
+scp cbass:/opt/cbass/.env /home/mdc159/projects/cbass/.env
+
+# Push local changes to VPS
+scp /home/mdc159/projects/cbass/.env cbass:/opt/cbass/.env
+
+# After changes on VPS, restart affected services
+ssh cbass "cd /opt/cbass && docker compose -p localai restart [service]"
+```
+
+**SSH Setup:**
+```bash
+# SSH config (~/.ssh/config)
+Host cbass
+    HostName 191.101.0.164
+    User root
+    IdentityFile ~/.ssh/cbass_vps
+```
 
 ## Pre-built Workflows
 
