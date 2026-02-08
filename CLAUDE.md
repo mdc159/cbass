@@ -331,3 +331,65 @@ docker compose -p localai down
 - Caddy enforces HTTPS in public mode
 - Supabase handles JWT authentication
 - Never expose `.env` or commit secrets
+
+## Claude Code Commands
+
+Three slash commands are installed globally that wrap Docker Compose and `start_services.py` with AI interpretation. They are available in any Claude Code session (not just this repo). Use them instead of running the CLI directly when you want analysis, not just raw output.
+
+| Command | What it does |
+|---------|-------------|
+| `/cbass-status` | Runs `docker compose -p localai ps`, then categorizes every service as Healthy / Warning / Down with diagnosis and fix commands. Accepts optional focus (e.g., `/cbass-status "databases"`). |
+| `/cbass-logs` | Fetches logs for a specific service, interprets errors, cross-references the service dependency chain, and suggests remediation. Usage: `/cbass-logs "n8n"` or `/cbass-logs "ollama" "model loading stuck"`. |
+| `/cbass-deploy` | Guided deployment — runs pre-flight checks (Docker running, `.env` exists, disk space, port conflicts), lets you choose profile/environment, executes `start_services.py`, then validates all services came up healthy. |
+
+### Recommended Workflows
+
+**Check what's running:**
+```
+/cbass-status
+```
+Quick overview of all 28 services with health interpretation.
+
+**Diagnose a failing service:**
+```
+/cbass-status
+/cbass-logs "n8n"
+```
+Status first to identify the problem, then logs for the specific service.
+
+**Start the stack:**
+```
+/cbass-deploy "gpu-nvidia" "private"
+```
+Guided deployment with pre-flight validation and post-deploy health check.
+
+**Deep investigation:**
+```
+/rca "n8n returning 502 — container restarting"
+```
+For complex issues that span multiple services, use the general-purpose RCA command.
+
+### How They Work
+
+All commands call `docker compose -p localai` or `start_services.py` via Bash — they never reimplement Docker logic. The AI layer adds:
+- **Categorization** — raw container states become prioritized tiers (Healthy/Warning/Down)
+- **Dependency awareness** — knows that if `db` is down, `n8n`, `langfuse`, and `kong` will also fail
+- **Error interpretation** — translates log patterns into plain-language diagnosis
+- **Remediation** — provides exact fix commands for each issue
+- **Pre-flight validation** — `/cbass-deploy` checks Docker, `.env`, disk space, and port conflicts before starting
+
+The shared knowledge base lives in the `cbass-context` skill (installed globally at `~/.claude/skills/cbass-context/`). It contains the full 28-service inventory with ports, deployment profiles, subdomain routing, a domain glossary (RAG, vector stores, LLM terms), known issues with workarounds, and the service dependency chain.
+
+### General-Purpose Commands
+
+These commands work in any repo and are always available:
+
+| Command | What it does |
+|---------|-------------|
+| `/quick-prime` | Fast 4-point project context |
+| `/deep-prime "area" "focus"` | Deep analysis of a specific area |
+| `/code-review` | Comprehensive code review with report |
+| `/rca "error"` | Root cause analysis for issues |
+| `/onboarding` | Interactive project introduction |
+| `/remember "fact"` | Store a preference or decision |
+| `/memory` | View and search stored memory |
