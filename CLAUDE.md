@@ -34,28 +34,64 @@ The primary learner is studying **biology**, so projects and examples should int
 6. **RAG**: Build a biology study assistant with document retrieval
 7. **Advanced**: Combine multiple services into complex biology research tools
 
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+| Section | Content |
+|---------|---------|
+| [docs/getting-started/](docs/getting-started/) | Quick start, first workflow, biology projects |
+| [docs/deployment/](docs/deployment/) | Local dev and VPS deployment guides |
+| [docs/services/](docs/services/) | Per-service documentation (11 services) |
+| [docs/architecture/](docs/architecture/) | System design and diagrams |
+| [docs/operations/](docs/operations/) | Common tasks, backup, troubleshooting |
+
+### Claude Code Onboarding
+
+Use the `/onboard` command to quickly load project context:
+
+```
+/onboard           # Full project context
+/onboard n8n       # Focus on n8n workflows
+/onboard flowise   # Focus on Flowise
+/onboard deploy    # Focus on deployment
+/onboard data      # Focus on data layer
+```
+
 ## Current Todo
 
 ### In Progress
-- [ ] Set up MCP servers for Claude Code integration
-  - [x] n8n-mcp configured (`.mcp.json` created with API key)
-  - [x] mcp-flowise configured (API key added)
-  - [ ] Install n8n-skills plugin (`/plugin install czlonkowski/n8n-skills`)
-  - [ ] Restart Claude Code to load MCP servers
+- [ ] Create n8n owner account (user management was reset)
 
 ### Next Up
-- [ ] Create n8n owner account (user management was reset)
 - [ ] Re-import backed up workflow from `/tmp/n8n-backup.json`
 - [ ] Write services overview tutorial for biology student
 - [ ] First biology project: Build a simple n8n workflow
 
 ### Completed
+- [x] Add node building tools to flowise-enhanced MCP server
+  - [x] Added 4 new tools: `list_node_types`, `get_node_schema`, `create_node`, `create_edge`
+  - [x] Nodes can now be built programmatically with full UI schema
+- [x] Fork n8n-mcp to add credential management tools (see `docs/n8n-mcp-credential-tools.md`)
+  - [x] Added 5 credential tools: list, get, schema, test, assign
+  - [x] Set up as git submodule in `vendor/n8n-mcp`
+- [x] MCP servers configured and working
+  - [x] n8n-mcp configured (forked with credential tools)
+  - [x] mcp-flowise configured
+  - [x] flowise-enhanced local MCP server created (11 tools total)
+- [x] n8n-mcp issues investigated (see `issues/n8n-mcp-issues.md`)
+- [x] Documentation restructured (consolidated 5 deployment guides, added 11 service docs)
+- [x] Onboarding skill created (`/onboard` command)
 - [x] Video landing page added to dashboard
 - [x] OpenCode service removed from dashboard
 - [x] Local/GitHub/VPS repos synced
 - [x] Added educational purpose to CLAUDE.md
 - [x] Added .env sync reminder to constraints
 - [x] UI Designer Pipeline workflow rebuilt (`CYfLRw6IPTJ7tfcD`)
+- [x] Unified .env file for local and VPS (synced via `scp cbass:/opt/cbass/.env`)
+  - [x] Fixed broken Supabase keys (ANON_KEY, SERVICE_ROLE_KEY)
+  - [x] Added KALI_HOSTNAME to both environments
+  - [x] Generated new SSH key (`~/.ssh/cbass_vps`) and updated SSH config
 
 ## n8n MCP Issues (Needs Fix)
 
@@ -72,28 +108,29 @@ The MCP returns node information for types that don't exist or have incorrect ca
 
 **Workaround**: Use `search_nodes` to verify node existence before using. The only Google Gemini node available is `@n8n/n8n-nodes-langchain.lmChatGoogleGemini` (a language model node for agents/chains).
 
-### Issue 2: No Credential Management Tools
+### Issue 2: Credential Management Tools - PARTIALLY WORKING
 
-The n8n API supports credential operations, but n8n-mcp doesn't expose them:
+**Status**: ⚠️ Partially fixed (see `docs/n8n-mcp-credential-tools.md`)
 
-**Missing tools needed**:
+The forked n8n-mcp in `vendor/n8n-mcp` adds 5 credential management tools, but **n8n's Public API intentionally blocks GET requests to `/credentials` endpoints for security**:
+
+| Tool | Status | Notes |
+|------|--------|-------|
+| `n8n_list_credentials` | ❌ Blocked | n8n API returns "GET method not allowed" |
+| `n8n_get_credential` | ❌ Blocked | n8n API returns "GET method not allowed" |
+| `n8n_get_credential_schema` | ✅ Works | Uses local data, not API |
+| `n8n_test_credential` | ❌ Blocked | Depends on blocked GET endpoint |
+| `n8n_assign_credential` | ✅ Works | Skips validation, uses known credential IDs |
+
+**Workaround**: Use the manual credential registry below with `n8n_assign_credential`:
 ```
-n8n_list_credentials     - List all credentials (id, name, type)
-n8n_get_credential       - Get credential metadata by ID
-n8n_assign_credential    - Assign credential to workflow nodes
-```
-
-**Current workaround**: Manually look up credential IDs in n8n UI, then use `n8n_update_partial_workflow` with:
-```json
-{
-  "type": "updateNode",
-  "nodeName": "OpenAI Chat Model",
-  "updates": {
-    "credentials": {
-      "openAiApi": { "id": "CREDENTIAL_ID", "name": "OpenAI" }
-    }
-  }
-}
+n8n_assign_credential({
+  workflowId: "CYfLRw6IPTJ7tfcD",
+  nodeName: "OpenAI Chat Model",
+  credentialId: "t6PNOhqfMP9ssxHr",
+  credentialType: "openAiApi",
+  credentialName: "OpenAI API"  // optional display name
+})
 ```
 
 ### Known Credential IDs (CBass Instance)
@@ -103,12 +140,228 @@ n8n_assign_credential    - Assign credential to workflow nodes
 | OpenAI | `t6PNOhqfMP9ssxHr` | `openAiApi` |
 | Google Gemini | `UwcFmvOdHdi8YhPh` | `googlePalmApi` |
 
-### Proposed Fix: Fork n8n-mcp
+## Flowise MCP Server
 
-1. Fork https://github.com/czlonkowski/n8n-mcp
-2. Add credential management tools to `src/mcp/tools-n8n-manager.ts`
-3. Fix node type validation against actual n8n node catalog
-4. Update `.mcp.json` to use local fork
+Unified local MCP server for all Flowise operations - chatflow querying, workflow management, and validation.
+
+### Quick Reference
+
+| Tool | Purpose | Key Parameters |
+|------|---------|----------------|
+| `list_node_types` | Get catalog of available nodes | `category`, `search`, `refresh` |
+| `get_node_schema` | Get complete schema for a node type | `node_name`, `summary` |
+| `create_node` | Build properly structured node from schema | `node_name`, `position`, `inputs`, `index` |
+| `create_edge` | Build edge between two nodes | `source_node`, `target_node`, `target_input` |
+| `create_prediction` | Send questions to chatflows | `question`, `chatflow_id`, `history` |
+| `list_chatflows` | List all chatflows | None |
+| `get_chatflow` | Get chatflow details | `chatflow_id` |
+| `validate_workflow` | Local + server-side validation | `workflow`, `chatflow_id`, `strict` |
+| `wrap_workflow` | Convert raw workflow to ExportData | `workflow`, `name`, `generate_id` |
+| `create_chatflow` | Create workflow via API | `workflow`, `name`, `deployed`, `validate_first` |
+| `import_workflow` | Import ExportData via API | `exportdata` |
+
+### Tool Details
+
+#### `list_node_types`
+
+Get catalog of available Flowise node types with basic metadata. Use to discover what nodes are available for building workflows.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `category` | string | No | Filter by category (e.g., 'Chat Models', 'Agents', 'Tools', 'Memory') |
+| `search` | string | No | Search nodes by name, label, or description |
+| `refresh` | boolean | No | Force refresh from API (default: use cache) |
+
+**Example:**
+```json
+{
+  "category": "Chat Models"
+}
+```
+
+**Returns:** List of nodes with `name`, `label`, `category`, `description`, `version`, `baseClasses`, plus `available_categories` list.
+
+#### `get_node_schema`
+
+Get complete schema for a specific Flowise node type. Returns inputParams, inputAnchors, outputAnchors needed for building nodes.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `node_name` | string | Yes | Node name (e.g., 'chatOllama', 'toolAgent', 'bufferMemory') |
+| `summary` | boolean | No | Return simplified summary instead of full schema |
+
+**Example:**
+```json
+{
+  "node_name": "chatOllama",
+  "summary": true
+}
+```
+
+#### `create_node`
+
+Build a properly structured Flowise node instance from schema. Creates a complete node with all required fields for UI rendering.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `node_name` | string | Yes | Node type name (e.g., 'chatOllama', 'toolAgent') |
+| `position` | object | No | Node position `{x: number, y: number}` |
+| `inputs` | object | No | Input values to set (e.g., `{modelName: 'qwen2.5:latest'}`) |
+| `node_id` | string | No | Custom node ID (auto-generated if not provided) |
+| `index` | integer | No | Index for auto-generated ID (e.g., 0 for chatOllama_0) |
+
+**Example:**
+```json
+{
+  "node_name": "chatOllama",
+  "position": {"x": 200, "y": 100},
+  "inputs": {"modelName": "qwen2.5:latest", "temperature": 0.7}
+}
+```
+
+**Returns:** Complete node structure with `inputParams`, `inputAnchors`, `outputAnchors`, and proper IDs for Flowise UI.
+
+#### `create_edge`
+
+Build a properly structured edge connecting two Flowise nodes. Validates anchor compatibility and generates proper handle IDs.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `source_node` | object | Yes | Source node instance (from create_node result) |
+| `target_node` | object | Yes | Target node instance (from create_node result) |
+| `target_input` | string | Yes | Name of input anchor on target (e.g., 'model', 'tools', 'memory') |
+| `source_output` | string | No | Name of output anchor on source (auto-detected if not provided) |
+| `validate_only` | boolean | No | Only validate connection, don't create edge |
+
+**Example:**
+```json
+{
+  "source_node": {"id": "chatOllama_0", "data": {...}},
+  "target_node": {"id": "toolAgent_0", "data": {...}},
+  "target_input": "model"
+}
+```
+
+**Returns:** Edge structure with `source`, `target`, `sourceHandle`, `targetHandle`, plus type compatibility validation.
+
+#### `create_prediction`
+
+Send a question to a Flowise chatflow and get an AI response.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `question` | string | Yes | The question or prompt to send |
+| `chatflow_id` | string | Yes | The chatflow ID to query |
+| `history` | array | No | Conversation history as `[{role, content}, ...]` |
+
+**Example:**
+```json
+{
+  "question": "What is photosynthesis?",
+  "chatflow_id": "abc-123-def"
+}
+```
+
+#### `validate_workflow`
+
+Two-stage validation: fast local checks + optional server-side validation.
+
+**Local validation checks:**
+- `nodes` array exists and non-empty
+- `edges` array exists
+- Each node has: `id`, `type`, `position`, `data`
+- Each edge has: `source`, `target`, `id`
+- Edge source/target nodes exist
+- Flow type detection (CHATFLOW vs AGENTFLOW)
+- AgentFlow: Start node presence
+
+**Example:**
+```json
+{
+  "workflow": {"nodes": [...], "edges": [...]},
+  "strict": true
+}
+```
+
+#### `wrap_workflow`
+
+Converts raw workflow to ExportData format (Python port of `wrap_flowise.ps1`).
+
+**Auto-detection logic:**
+- Has `func`, `schema`, `name` → Tool
+- Any node with `type: "agentFlow"` or `type: "iteration"` → AGENTFLOW
+- Otherwise → CHATFLOW
+
+**Example:**
+```json
+{
+  "workflow": {"nodes": [...], "edges": [...]},
+  "name": "My Biology Chatbot",
+  "generate_id": true
+}
+```
+
+#### `create_chatflow`
+
+Creates workflow via Flowise API with optional validation.
+
+**Example:**
+```json
+{
+  "workflow": {"nodes": [...], "edges": [...]},
+  "name": "Cell Division Tutor",
+  "validate_first": true,
+  "deployed": false
+}
+```
+
+#### `import_workflow`
+
+Imports full ExportData via Flowise API (equivalent to Settings → Load Data).
+
+**Example:**
+```json
+{
+  "exportdata": {
+    "ChatFlow": [...],
+    "AgentFlowV2": [...],
+    "Tool": [...],
+    ...
+  }
+}
+```
+
+### Configuration
+
+Located in `.mcp.json`:
+```json
+"flowise": {
+  "command": "python",
+  "args": ["-m", "mcp_flowise_enhanced"],
+  "cwd": "X:\\GitHub\\CBass\\mcp\\flowise-enhanced",
+  "env": {
+    "FLOWISE_API_KEY": "...",
+    "FLOWISE_API_ENDPOINT": "https://flowise.cbass.space"
+  }
+}
+```
+
+### Setup
+
+```bash
+cd mcp/flowise-enhanced
+pip install -e .
+# Then restart Claude Code
+```
+
+### Biology Applications
+
+| Use Case | How |
+|----------|-----|
+| Quick biology Q&A | Query a biology-tuned chatflow with `create_prediction` |
+| Test chatflows | Verify chatflow works before UI testing |
+| Batch questions | Script multiple questions to a chatflow |
+| Create study assistants | Use `create_chatflow` to build new chatflows programmatically |
 
 ## Flowise Issues
 
@@ -133,21 +386,49 @@ sudo chown -R 1000:1000 /var/lib/docker/volumes/localai_flowise/_data/
 docker compose -p localai restart flowise
 ```
 
-### Fallback: API Import
+### Import Methods
 
-If UI import still fails, the API workaround remains available:
+Flowise has two different import mechanisms:
 
-```bash
-# The raw export format {nodes, edges} doesn't work
-# Must wrap as {name, flowData, type} where flowData is STRINGIFIED JSON
+| Method | Location | Format Required | Saves to DB | Notes |
+|--------|----------|-----------------|-------------|-------|
+| **Load Data** | Settings → Load Data | ExportData (15 arrays) | YES | **RECOMMENDED** |
+| **Load Chatflow** | Canvas → Settings → Load | Raw `{nodes, edges}` | NO | Errors silently, canvas only |
 
-curl -X POST "https://flowise.cbass.space/api/v1/chatflows" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $FLOWISE_API_KEY" \
-  -d @wrapped-flow.json
+**Recommendation**: Always use **Settings → Load Data** for reliable imports. The "Load Chatflow" button only loads into the visual canvas without saving, and errors fail silently.
+
+### ExportData Format
+
+The full ExportData format (used by "Export All" and "Load Data"):
+
+```json
+{
+  "AgentFlow": [],
+  "AgentFlowV2": [{ "id": "uuid", "name": "...", "flowData": "stringified JSON", "type": "AGENTFLOW" }],
+  "ChatFlow": [{ "id": "uuid", "name": "...", "flowData": "stringified JSON", "type": "CHATFLOW" }],
+  "Tool": [{ "name": "...", "description": "...", "schema": "...", "func": "..." }],
+  ...15 total arrays...
+}
 ```
 
-**Wrapper script**: `X:\GitHub\CBass\wrap_flowise.ps1` converts raw exports to API format.
+### Wrapper Script
+
+The `wrap_flowise.ps1` script converts raw workflow files to ExportData format:
+
+```powershell
+# Convert all files in directory (creates flowise-import.json)
+.\wrap_flowise.ps1 -Path "flowise"
+
+# Convert single file (creates *-exportdata.json)
+.\wrap_flowise.ps1 -Path "flowise\MyWorkflow.json"
+
+# Then import via: Settings → Load Data
+```
+
+**Auto-detection**: The script detects flow type based on node types:
+- Nodes with `type: "agentFlow"` or `type: "iteration"` → AgentFlowV2
+- Nodes with `type: "customNode"` → ChatFlow
+- Files with `func` and `schema` → Tool
 
 ### Template Import Note
 
@@ -235,6 +516,8 @@ CBass/
 ├── n8n/backup/             # Pre-built RAG workflows
 ├── n8n-tool-workflows/     # Additional workflow imports
 ├── flowise/                # Flowise tools & chatflows
+├── mcp/                    # Local MCP servers
+│   └── flowise-enhanced/   # Flowise validation/wrapping MCP
 ├── searxng/                # SearXNG config (generated)
 └── .claude/                # Claude Code config
     ├── agents/            # LSP-aware agents
@@ -288,7 +571,36 @@ Open WebUI (:8080) → n8n_pipe.py → n8n webhook (:5678)
 - Never use `@` in `POSTGRES_PASSWORD` (breaks URI parsing)
 - `.env` is gitignored - never commit secrets
 - Copy from `env.example` as template
-- **Keep local and VPS `.env` files in sync manually** (they don't sync via git)
+
+### Environment File Sync
+
+**One `.env` to rule them all** - The same `.env` file is used for both local development and VPS production. The VPS copy at `/opt/cbass/.env` is the source of truth.
+
+**Why this works:**
+- Hostnames like `n8n.cbass.space` work from anywhere (local browser hits VPS)
+- All secrets are shared between environments
+- No drift between local and production configs
+
+**Sync Commands:**
+```bash
+# Pull latest from VPS to local
+scp cbass:/opt/cbass/.env /home/mdc159/projects/cbass/.env
+
+# Push local changes to VPS
+scp /home/mdc159/projects/cbass/.env cbass:/opt/cbass/.env
+
+# After changes on VPS, restart affected services
+ssh cbass "cd /opt/cbass && docker compose -p localai restart [service]"
+```
+
+**SSH Setup:**
+```bash
+# SSH config (~/.ssh/config)
+Host cbass
+    HostName 191.101.0.164
+    User root
+    IdentityFile ~/.ssh/cbass_vps
+```
 
 ## Pre-built Workflows
 

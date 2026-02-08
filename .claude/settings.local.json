@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh cbass:*)",
+      "Bash(ssh:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: enhance dashboard with video background and new assets\n\n- Added full-screen video background to landing page\n- New logo assets for branding\n- Dashboard architecture documentation\n- Added media/ to gitignore for large files\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "mcp__n8n-mcp__n8n_health_check",
+      "mcp__mcp-flowise__list_chatflows"
+    ]
+  },
+  "enabledPlugins": {
+    "supabase@claude-plugins-official": true
+  }
+}

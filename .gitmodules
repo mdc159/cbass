@@ -1,3 +1,7 @@
 [submodule "references/flowise-masterclass"]
 	path = references/flowise-masterclass
 	url = https://github.com/leonvanzyl/flowise-masterclass-2025.git
+[submodule "vendor/n8n-mcp"]
+	path = vendor/n8n-mcp
+	url = git@github.com:1215-Labs/n8n-mcp.git
+	branch = feature/credential-management-tools
