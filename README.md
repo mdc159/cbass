@@ -336,6 +336,15 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
 
+### Dashboard Supabase Target
+
+The dashboard auth/API target is controlled by `NEXT_PUBLIC_SUPABASE_URL`.
+
+- Local development: `NEXT_PUBLIC_SUPABASE_URL=http://localhost:8000`
+- Remote deployment: `NEXT_PUBLIC_SUPABASE_URL=https://supabase.yourdomain.com`
+
+If this points to a remote URL, `http://localhost:3002` will authenticate against that remote Supabase, not your local container.
+
 ---
 
 ## Directory Structure

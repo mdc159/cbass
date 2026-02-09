@@ -1,6 +1,6 @@
 # Supabase - Database & Auth Platform
 
-**URL**: https://supabase.cbass.space | **Container**: kong (gateway) | **Port**: 8000
+**URL**: http://localhost:8000 (local) / https://supabase.cbass.space (remote) | **Container**: kong (gateway) | **Port**: 8000
 
 ## Overview
 
@@ -12,6 +12,13 @@ Supabase provides PostgreSQL database with pgvector extension for embeddings, au
 |-------------|-----|
 | Production | https://supabase.cbass.space |
 | Local | http://localhost:8000 |
+
+### Dashboard Auth Target
+
+The CBass dashboard (`http://localhost:3002`) uses `NEXT_PUBLIC_SUPABASE_URL` for auth/API calls.
+
+- If `NEXT_PUBLIC_SUPABASE_URL=http://localhost:8000`, dashboard login uses local Supabase.
+- If `NEXT_PUBLIC_SUPABASE_URL=https://supabase.cbass.space`, dashboard login uses remote Supabase.
 
 ## First-Time Setup
 
@@ -184,8 +191,11 @@ Key Supabase variables in `.env`:
 ```bash
 POSTGRES_PASSWORD=         # Database password (no @)
 JWT_SECRET=                # For auth tokens
+PG_META_CRYPTO_KEY=        # Metadata crypto key (can match JWT_SECRET)
 ANON_KEY=                  # Public API key
 SERVICE_ROLE_KEY=          # Admin API key
+NEXT_PUBLIC_SUPABASE_URL=  # Dashboard Supabase target URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=  # Match ANON_KEY
 DASHBOARD_USERNAME=        # Studio login
 DASHBOARD_PASSWORD=        # Studio password
 ```
