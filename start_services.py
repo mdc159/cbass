@@ -14,11 +14,88 @@ import time
 import argparse
 import platform
 import sys
+import webbrowser
 
-def run_command(cmd, cwd=None):
-    """Run a shell command and print it."""
+def run_command(cmd, cwd=None, retries=1, retry_delay=3):
+    """Run a shell command and print it with optional retries."""
     print("Running:", " ".join(cmd))
-    subprocess.run(cmd, cwd=cwd, check=True)
+    for attempt in range(1, retries + 1):
+        try:
+            subprocess.run(cmd, cwd=cwd, check=True)
+            return
+        except subprocess.CalledProcessError:
+            if attempt >= retries:
+                raise
+            print(f"Command failed (attempt {attempt}/{retries}), retrying in {retry_delay}s...")
+            time.sleep(retry_delay)
+
+def preflight_checks(env_file):
+    """Verify prerequisites before starting the stack."""
+    errors = []
+    warnings = []
+
+    # 1. Docker is running
+    try:
+        subprocess.run(
+            ["docker", "info"],
+            capture_output=True, check=True
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        errors.append("Docker is not running. Start Docker Desktop and try again.")
+
+    # 2. Docker Compose is available
+    try:
+        subprocess.run(
+            ["docker", "compose", "version"],
+            capture_output=True, check=True
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        errors.append("Docker Compose is not available. Install Docker Compose V2.")
+
+    # 3. Env file exists
+    if not os.path.exists(env_file):
+        errors.append(f"Environment file not found: {env_file}")
+
+    # 4. Disk space >= 20GB free
+    try:
+        stat = os.statvfs(".")
+        free_gb = (stat.f_bavail * stat.f_frsize) / (1024 ** 3)
+        if free_gb < 20:
+            warnings.append(f"Low disk space: {free_gb:.1f}GB free (recommend >= 20GB)")
+    except AttributeError:
+        pass  # statvfs not available on Windows
+
+    # 5. Key ports available (warn only)
+    key_ports = {
+        5678: "n8n",
+        8080: "Open WebUI",
+        8000: "Supabase (Kong)",
+        3000: "Langfuse",
+        3001: "Flowise",
+    }
+    try:
+        import socket
+        for port, service in key_ports.items():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.5)
+                if s.connect_ex(("127.0.0.1", port)) == 0:
+                    warnings.append(f"Port {port} is in use ({service})")
+    except Exception:
+        pass  # Non-critical
+
+    # Print results
+    if warnings:
+        print("\n⚠ Preflight warnings:")
+        for w in warnings:
+            print(f"  - {w}")
+
+    if errors:
+        print("\n✗ Preflight failed:")
+        for e in errors:
+            print(f"  - {e}")
+        sys.exit(1)
+
+    print("✓ Preflight checks passed")
 
 def clone_supabase_repo():
     """Clone the Supabase repository using sparse checkout if not already present."""
@@ -36,43 +113,46 @@ def clone_supabase_repo():
     else:
         print("Supabase repository already exists, updating...")
         os.chdir("supabase")
-        run_command(["git", "pull"])
+        # GitHub can intermittently return 5xx; retry pull a few times.
+        run_command(["git", "pull"], retries=3, retry_delay=5)
         os.chdir("..")
 
-def prepare_supabase_env():
-    """Copy .env to .env in supabase/docker."""
+def prepare_supabase_env(env_file):
+    """Copy env file to .env in supabase/docker."""
     env_path = os.path.join("supabase", "docker", ".env")
-    env_example_path = os.path.join(".env")
-    print("Copying .env in root to .env in supabase/docker...")
-    shutil.copyfile(env_example_path, env_path)
+    print(f"Copying {env_file} to {env_path}...")
+    shutil.copyfile(env_file, env_path)
 
-def stop_existing_containers(profile=None):
+def stop_existing_containers(profile=None, env_file=".env"):
     print("Stopping and removing existing containers for the unified project 'localai'...")
-    cmd = ["docker", "compose", "-p", "localai"]
+    cmd = ["docker", "compose", "-p", "localai", "--env-file", env_file]
     if profile and profile != "none":
         cmd.extend(["--profile", profile])
     cmd.extend(["-f", "docker-compose.yml", "down"])
     run_command(cmd)
 
-def start_supabase(environment=None):
+def start_supabase(environment=None, env_file=".env"):
     """Start the Supabase services (using its compose file)."""
     print("Starting Supabase services...")
-    cmd = ["docker", "compose", "-p", "localai", "-f", "supabase/docker/docker-compose.yml"]
-    if environment and environment == "public":
+    cmd = ["docker", "compose", "-p", "localai", "--env-file", env_file,
+           "-f", "supabase/docker/docker-compose.yml"]
+    if environment == "public":
         cmd.extend(["-f", "docker-compose.override.public.supabase.yml"])
+    elif environment == "private":
+        cmd.extend(["-f", "docker-compose.override.private.supabase.yml"])
     cmd.extend(["up", "-d"])
     run_command(cmd)
 
-def start_local_ai(profile=None, environment=None):
+def start_local_ai(profile=None, environment=None, env_file=".env"):
     """Start the local AI services (using its compose file)."""
     print("Starting local AI services...")
-    cmd = ["docker", "compose", "-p", "localai"]
+    cmd = ["docker", "compose", "-p", "localai", "--env-file", env_file]
     if profile and profile != "none":
         cmd.extend(["--profile", profile])
     cmd.extend(["-f", "docker-compose.yml"])
-    if environment and environment == "private":
+    if environment == "private":
         cmd.extend(["-f", "docker-compose.override.private.yml"])
-    if environment and environment == "public":
+    elif environment == "public":
         cmd.extend(["-f", "docker-compose.override.public.yml"])
     cmd.extend(["up", "-d"])
     run_command(cmd)
@@ -223,26 +303,44 @@ def main():
                       help='Profile to use for Docker Compose (default: cpu)')
     parser.add_argument('--environment', choices=['private', 'public'], default='private',
                       help='Environment to use for Docker Compose (default: private)')
+    parser.add_argument('--env-file', default='.env',
+                      help='Path to environment file (default: .env)')
+    parser.add_argument('--open-dashboard', action='store_true',
+                      help='Open dashboard in your default browser after startup')
+    parser.add_argument('--dashboard-url', default='http://localhost:3002',
+                      help='Dashboard URL to open when using --open-dashboard (default: http://localhost:3002)')
     args = parser.parse_args()
 
+    env_file = args.env_file
+
+    # Preflight checks
+    preflight_checks(env_file)
+
     clone_supabase_repo()
-    prepare_supabase_env()
+    prepare_supabase_env(env_file)
 
     # Generate SearXNG secret key and check docker-compose.yml
     generate_searxng_secret_key()
     check_and_fix_docker_compose_for_searxng()
 
-    stop_existing_containers(args.profile)
+    stop_existing_containers(args.profile, env_file)
 
     # Start Supabase first
-    start_supabase(args.environment)
+    start_supabase(args.environment, env_file)
 
     # Give Supabase some time to initialize
     print("Waiting for Supabase to initialize...")
     time.sleep(10)
 
     # Then start the local AI services
-    start_local_ai(args.profile, args.environment)
+    start_local_ai(args.profile, args.environment, env_file)
+
+    if args.open_dashboard:
+        print(f"Opening dashboard: {args.dashboard_url}")
+        try:
+            webbrowser.open(args.dashboard_url)
+        except Exception as e:
+            print(f"Warning: Could not open browser automatically: {e}")
 
 if __name__ == "__main__":
     main()

@@ -29,7 +29,7 @@ docker compose -p localai restart <service-name>
 docker compose -p localai down
 
 # Start services
-python start_services.py --profile gpu-nvidia --environment private
+python start_services.py --profile gpu-nvidia --environment private --open-dashboard
 ```
 
 ### Service Health

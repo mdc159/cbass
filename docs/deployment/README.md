@@ -43,14 +43,18 @@ CBass can be deployed locally for development or on a VPS for production.
 
 ```bash
 # Local development (NVIDIA GPU)
-python start_services.py --profile gpu-nvidia --environment private
+python start_services.py --profile gpu-nvidia --environment private --open-dashboard
 
 # Local development (CPU only)
-python start_services.py --profile cpu --environment private
+python start_services.py --profile cpu --environment private --open-dashboard
 
 # VPS production
 python start_services.py --profile cpu --environment public
 ```
+
+Optional startup convenience:
+- `--open-dashboard` opens the dashboard in your default browser after startup.
+- `--dashboard-url` overrides the default dashboard URL (`http://localhost:3002`).
 
 ## DNS & SSL
 

@@ -243,10 +243,10 @@ cp env.example .env
 # Edit .env with your secrets (see Environment Variables section)
 
 # Start with NVIDIA GPU
-python start_services.py --profile gpu-nvidia --environment private
+python start_services.py --profile gpu-nvidia --environment private --open-dashboard
 
 # Or start with CPU only
-python start_services.py --profile cpu --environment private
+python start_services.py --profile cpu --environment private --open-dashboard
 ```
 
 ### Access Services
@@ -284,11 +284,14 @@ N8N_USER_MANAGEMENT_JWT_SECRET=
 # Supabase - see: https://supabase.com/docs/guides/self-hosting/docker
 POSTGRES_PASSWORD=          # No '@' character!
 JWT_SECRET=
+PG_META_CRYPTO_KEY=        # Reuse JWT_SECRET value if desired
 ANON_KEY=
 SERVICE_ROLE_KEY=
 DASHBOARD_USERNAME=
 DASHBOARD_PASSWORD=
 POOLER_TENANT_ID=
+NEXT_PUBLIC_SUPABASE_URL=  # e.g. http://localhost:8000
+NEXT_PUBLIC_SUPABASE_ANON_KEY=  # same value as ANON_KEY
 
 # Neo4j
 NEO4J_AUTH=neo4j/your_password
@@ -388,11 +391,18 @@ CBass/
 | `private` | `--environment private` | All ports exposed locally (default) |
 | `public` | `--environment public` | Only ports 80/443 via Caddy |
 
+### Startup Convenience Flags
+
+| Flag | Default | Behavior |
+|------|---------|----------|
+| `--open-dashboard` | off | Opens dashboard in your default browser after startup |
+| `--dashboard-url <url>` | `http://localhost:3002` | URL used when `--open-dashboard` is enabled |
+
 ### Examples
 
 ```bash
 # Local development with NVIDIA GPU
-python start_services.py --profile gpu-nvidia --environment private
+python start_services.py --profile gpu-nvidia --environment private --open-dashboard
 
 # Production deployment
 python start_services.py --profile gpu-nvidia --environment public
@@ -402,6 +412,9 @@ python start_services.py --profile cpu
 
 # Use external API (no local Ollama)
 python start_services.py --profile none
+
+# Open a custom dashboard URL after startup
+python start_services.py --profile none --environment private --open-dashboard --dashboard-url http://localhost:3002
 ```
 
 ---

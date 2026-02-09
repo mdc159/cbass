@@ -33,25 +33,39 @@ N8N_USER_MANAGEMENT_JWT_SECRET=another_generated_key
 
 POSTGRES_PASSWORD=choose_a_password    # No @ symbol!
 JWT_SECRET=another_key
+PG_META_CRYPTO_KEY=another_key
 ANON_KEY=see_supabase_docs
 SERVICE_ROLE_KEY=see_supabase_docs
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:8000
+NEXT_PUBLIC_SUPABASE_ANON_KEY=same_as_ANON_KEY
 
 NEO4J_AUTH=neo4j/your_neo4j_password
 ```
 
 ## Step 3: Start Services
 
-**With NVIDIA GPU:**
+**With NVIDIA GPU (Linux/WSL):**
 ```bash
-python start_services.py --profile gpu-nvidia --environment private
+python start_services.py --profile gpu-nvidia --environment private --open-dashboard
+```
+
+**Apple Silicon (M-series Mac):**
+```bash
+# First: install system Ollama for Metal GPU acceleration
+brew install ollama && brew services start ollama
+ollama pull qwen2.5:7b-instruct-q4_K_M && ollama pull nomic-embed-text
+
+# Then start CBass without Docker Ollama
+python start_services.py --profile none --environment private --open-dashboard
 ```
 
 **CPU Only:**
 ```bash
-python start_services.py --profile cpu --environment private
+python start_services.py --profile cpu --environment private --open-dashboard
 ```
 
 First startup takes 10-15 minutes to download images and models.
+With `--open-dashboard`, your browser opens `http://localhost:3002` automatically when startup completes.
 
 ## Step 4: Access Services
 

@@ -8,17 +8,21 @@ Frequently used operations for managing CBass.
 
 ```bash
 # NVIDIA GPU
-python start_services.py --profile gpu-nvidia --environment private
+python start_services.py --profile gpu-nvidia --environment private --open-dashboard
 
 # AMD GPU (Linux)
-python start_services.py --profile gpu-amd --environment private
+python start_services.py --profile gpu-amd --environment private --open-dashboard
 
 # CPU only
-python start_services.py --profile cpu --environment private
+python start_services.py --profile cpu --environment private --open-dashboard
 
 # No local LLM
-python start_services.py --profile none --environment private
+python start_services.py --profile none --environment private --open-dashboard
 ```
+
+Optional startup flags:
+- `--open-dashboard` opens the dashboard URL after startup.
+- `--dashboard-url <url>` overrides the default (`http://localhost:3002`).
 
 ### Production (VPS)
 

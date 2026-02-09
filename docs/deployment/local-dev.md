@@ -21,10 +21,10 @@ cd cbass
 cp env.example .env
 
 # Start with NVIDIA GPU
-python start_services.py --profile gpu-nvidia --environment private
+python start_services.py --profile gpu-nvidia --environment private --open-dashboard
 
 # Or start with CPU only
-python start_services.py --profile cpu --environment private
+python start_services.py --profile cpu --environment private --open-dashboard
 ```
 
 ## Environment Configuration
@@ -39,14 +39,21 @@ N8N_USER_MANAGEMENT_JWT_SECRET=
 # Supabase
 POSTGRES_PASSWORD=yourpassword    # NO '@' character!
 JWT_SECRET=
+PG_META_CRYPTO_KEY=               # Can reuse JWT_SECRET
 ANON_KEY=
 SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:8000
+NEXT_PUBLIC_SUPABASE_ANON_KEY=    # same value as ANON_KEY
 
 # Neo4j
 NEO4J_AUTH=neo4j/yourpassword
 ```
 
 For local development, leave hostname variables commented out.
+
+Optional convenience flags for startup:
+- `--open-dashboard` to auto-open the dashboard in your browser
+- `--dashboard-url <url>` to override the default `http://localhost:3002`
 
 ## Access Services
 
@@ -66,10 +73,10 @@ After startup completes:
 
 | Profile | Command | Use Case |
 |---------|---------|----------|
-| `gpu-nvidia` | `--profile gpu-nvidia` | NVIDIA GPU (recommended) |
+| `gpu-nvidia` | `--profile gpu-nvidia` | NVIDIA GPU (recommended for Linux/WSL) |
 | `gpu-amd` | `--profile gpu-amd` | AMD GPU (Linux only) |
-| `cpu` | `--profile cpu` | CPU only |
-| `none` | `--profile none` | No local LLM (use external API) |
+| `cpu` | `--profile cpu` | CPU only (no GPU acceleration) |
+| `none` | `--profile none` | System Ollama (Apple Silicon) or external API |
 
 ### Windows GPU Setup
 
@@ -77,12 +84,17 @@ After startup completes:
 2. Install NVIDIA Container Toolkit in WSL
 3. Use `--profile gpu-nvidia`
 
-### Mac Users
+### Apple Silicon (M-series Macs)
 
-Docker on Mac cannot access GPU. Options:
-1. Use `--profile cpu` (slow inference)
-2. Run Ollama locally outside Docker, use `--profile none`
-3. Use external API (OpenAI, Anthropic)
+Docker on Mac cannot access the Metal GPU. Use system Ollama instead:
+
+1. **Install Ollama**: `brew install ollama && brew services start ollama`
+2. **Pull models**: `ollama pull qwen2.5:7b-instruct-q4_K_M && ollama pull nomic-embed-text`
+3. **Start CBass**: `python start_services.py --profile none --environment private`
+
+Services connect to system Ollama via `http://host.docker.internal:11434` (pre-configured in `docker-compose.override.private.yml`).
+
+See [Ollama service docs](../services/ollama.md#apple-silicon-m-series-macs) for full setup including launchd plist configuration and memory guide.
 
 ## First Run Notes
 

@@ -401,11 +401,15 @@ services:
      - ollama-gpu-amd
 
   dashboard:
-    build: ./dashboard
+    build:
+      context: ./dashboard
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
     container_name: dashboard
     restart: unless-stopped
     environment:
-      - NEXT_PUBLIC_SUPABASE_URL=https://supabase.cbass.space
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}
 
   # Kali Linux Desktop - Security learning environment with GUI
