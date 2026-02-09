@@ -30,7 +30,7 @@ New to CBass? Follow these guides in order:
 
 ## Services
 
-CBass includes 11+ services. See the [Services Index](./services/README.md) for the complete inventory.
+CBass includes multiple integrated services. See the [Services Index](./services/README.md) for the complete inventory.
 
 **Core Services**: [n8n](./services/n8n.md) | [Flowise](./services/flowise.md) | [Open WebUI](./services/open-webui.md) | [Ollama](./services/ollama.md)
 
@@ -57,7 +57,7 @@ Claude Code agents can use the `/onboard` command to load project context:
 /onboard deploy    # Focus on deployment
 ```
 
-See [CLAUDE.md](../CLAUDE.md) for Claude Code-specific configuration.
+For a concise snapshot, use `/cbass-context` (see [CLAUDE.md](../CLAUDE.md) for Claude Code-specific configuration).
 
 ## Educational Purpose
 
@@ -66,3 +66,7 @@ CBass serves as a tutorial platform for learning AI tools. The primary learner i
 ## Archive
 
 Deprecated documentation is preserved in [docs/archive/](./archive/) for historical reference.
+
+## Documentation Standards
+
+Follow the documentation standards in [docs/CONTRIBUTING_DOCS.md](./CONTRIBUTING_DOCS.md), including the templates in [docs/templates/](./templates/).

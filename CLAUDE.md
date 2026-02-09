@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-CBass is a self-hosted AI Docker Compose orchestration platform - a fork/enhancement of n8n's self-hosted-ai-starter-kit. It combines 10+ AI and database services into a cohesive local infrastructure stack.
+CBass is a self-hosted AI Docker Compose orchestration platform - a fork/enhancement of n8n's self-hosted-ai-starter-kit. It combines AI and database services into a cohesive local infrastructure stack.
 
 ## Educational Purpose
 
@@ -57,6 +57,8 @@ Use the `/onboard` command to quickly load project context:
 /onboard deploy    # Focus on deployment
 /onboard data      # Focus on data layer
 ```
+
+For a shorter snapshot, use `/cbass-context` (focus areas: deploy, services, ops).
 
 ## Current Todo
 
@@ -660,7 +662,7 @@ Three slash commands are installed globally that wrap Docker Compose and `start_
 ```
 /cbass-status
 ```
-Quick overview of all 28 services with health interpretation.
+Quick overview of stack services with health interpretation.
 
 **Diagnose a failing service:**
 ```
@@ -690,7 +692,7 @@ All commands call `docker compose -p localai` or `start_services.py` via Bash �
 - **Remediation** — provides exact fix commands for each issue
 - **Pre-flight validation** — `/cbass-deploy` checks Docker, `.env`, disk space, and port conflicts before starting
 
-The shared knowledge base lives in the `cbass-context` skill (installed globally at `~/.claude/skills/cbass-context/`). It contains the full 28-service inventory with ports, deployment profiles, subdomain routing, a domain glossary (RAG, vector stores, LLM terms), known issues with workarounds, and the service dependency chain.
+The shared knowledge base lives in the `cbass-context` skill (installed globally at `~/.claude/skills/cbass-context/` and in this repo at `.claude/skills/cbass-context-v1-0-0/`). It contains the service inventory with ports, deployment profiles, subdomain routing, a domain glossary (RAG, vector stores, LLM terms), known issues with workarounds, and the service dependency chain.
 
 ### General-Purpose Commands
 
@@ -702,6 +704,6 @@ These commands work in any repo and are always available:
 | `/deep-prime "area" "focus"` | Deep analysis of a specific area |
 | `/code-review` | Comprehensive code review with report |
 | `/rca "error"` | Root cause analysis for issues |
-| `/onboarding` | Interactive project introduction |
+| `/onboard` | Interactive project introduction |
 | `/remember "fact"` | Store a preference or decision |
 | `/memory` | View and search stored memory |

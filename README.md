@@ -1,6 +1,6 @@
 # CBass - Self-Hosted AI Stack
 
-**CBass** is a self-hosted AI Docker Compose orchestration platform that combines 20+ AI and database services into a cohesive local infrastructure stack with automatic HTTPS via Caddy.
+**CBass** is a self-hosted AI Docker Compose orchestration platform that combines AI and database services into a cohesive local infrastructure stack with automatic HTTPS via Caddy.
 
 > Fork of [coleam00/local-ai-packaged](https://github.com/coleam00/local-ai-packaged), which itself builds on [n8n-io/self-hosted-ai-starter-kit](https://github.com/n8n-io/self-hosted-ai-starter-kit)
 
@@ -261,6 +261,14 @@ After startup, access services at:
 | Supabase Studio | http://localhost:8000 |
 | Neo4j Browser | http://localhost:7474 |
 | Langfuse | http://localhost:3000 |
+
+---
+
+## Documentation
+
+Start with [docs/README.md](./docs/README.md) for the full documentation index, including deployment, services, architecture, and operations guides.
+
+Claude Code users can use `/onboard` or `/cbass-context` to load project context quickly (see [docs/README.md](./docs/README.md) and [CLAUDE.md](./CLAUDE.md)).
 
 ---
 
