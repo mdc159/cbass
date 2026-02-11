@@ -68,6 +68,17 @@ services:
       - 127.0.0.1:11434:11434
 
   dashboard:
+    build:
+      context: ./dashboard
+      args:
+        NEXT_PUBLIC_N8N_URL: http://localhost:5678
+        NEXT_PUBLIC_OPENWEBUI_URL: http://localhost:8080
+        NEXT_PUBLIC_FLOWISE_URL: http://localhost:3001
+        NEXT_PUBLIC_SUPABASE_STUDIO_URL: http://localhost:8000
+        NEXT_PUBLIC_LANGFUSE_URL: http://localhost:3000
+        NEXT_PUBLIC_SEARXNG_URL: http://localhost:8081
+        NEXT_PUBLIC_NEO4J_URL: http://localhost:7474
+        NEXT_PUBLIC_KALI_URL: http://localhost:6901
     ports:
       - 127.0.0.1:3002:3000
 

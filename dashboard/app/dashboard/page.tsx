@@ -7,24 +7,7 @@ import { createClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { LogOut, Moon, Sun, RefreshCw, Download, Loader2 } from "lucide-react"
 import { useTheme } from "next-themes"
-
-const services = [
-  { name: "n8n", description: "Workflow Automation", url: "https://n8n.cbass.space", icon: "🤖" },
-  { name: "Open WebUI", description: "AI Chat Interface", url: "https://openwebui.cbass.space", icon: "💬" },
-  { name: "Flowise", description: "Visual AI Builder", url: "https://flowise.cbass.space", icon: "🔄" },
-  { name: "Supabase", description: "Database & Backend", url: "https://supabase.cbass.space", icon: "🗄️" },
-  { name: "Langfuse", description: "LLM Observability", url: "https://langfuse.cbass.space", icon: "📊" },
-  { name: "SearXNG", description: "Meta Search Engine", url: "https://searxng.cbass.space", icon: "🔍" },
-  { name: "Neo4j", description: "Knowledge Graph", url: "https://neo4j.cbass.space", icon: "🕸️" },
-  { name: "Kali", description: "Security Lab", url: "https://kali.cbass.space", icon: "🐉" }
-]
-
-const updatableServices = [
-  { name: "Open WebUI", container: "open-webui", icon: "💬" },
-  { name: "n8n", container: "n8n", icon: "🤖" },
-  { name: "Flowise", container: "flowise", icon: "🔄" },
-  { name: "Langfuse", container: "langfuse-web", icon: "📊" },
-]
+import { services, updatableServices } from "@/lib/services"
 
 type ServiceStatus = "online" | "offline" | "pending"
 
