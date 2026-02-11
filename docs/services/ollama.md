@@ -102,17 +102,91 @@ Start with:
 python start_services.py --profile cpu
 ```
 
-### Mac Users
+### Apple Silicon (M-series Macs)
 
-Docker on Mac cannot access GPU. Options:
-1. Run Ollama outside Docker (locally)
-2. Use `--profile none` and external API
-3. Accept slower CPU inference
+Docker on Mac runs inside a Linux VM and **cannot access the Metal GPU**. The correct approach is to run Ollama natively via Homebrew and use `--profile none` to skip the Docker Ollama container.
 
-If running Ollama locally on Mac:
+#### Why System Ollama?
+
+| Approach | GPU Access | Performance |
+|----------|-----------|-------------|
+| Docker Ollama (`--profile cpu`) | None (CPU only) | Slow — no Metal acceleration |
+| System Ollama (`--profile none`) | Full Metal GPU | Fast — native Apple Silicon |
+
+#### Setup
+
+1. **Install Ollama via Homebrew:**
+   ```bash
+   brew install ollama
+   brew services start ollama
+   ```
+
+2. **Configure the launchd plist** (`~/Library/LaunchAgents/homebrew.mxcl.ollama.plist`):
+
+   These environment variables should match `docker-compose.yml`'s `x-ollama` anchor:
+
+   | Variable | Value | Purpose |
+   |----------|-------|---------|
+   | `OLLAMA_FLASH_ATTENTION` | `1` | Enable flash attention (faster inference) |
+   | `OLLAMA_KV_CACHE_TYPE` | `q8_0` | Quantized KV cache (halves memory vs fp16) |
+   | `OLLAMA_CONTEXT_LENGTH` | `8192` | Default context window |
+   | `OLLAMA_MAX_LOADED_MODELS` | `2` | Max concurrent models in memory |
+   | `OLLAMA_MODELS` | `/Volumes/Storage` | Model storage path (optional, for external SSD) |
+
+   Use `/cbass-ollama sync` to automatically sync these from docker-compose.yml to the plist.
+
+   **Important**: `brew services restart` overwrites plist customizations. After editing the plist manually, reload with:
+   ```bash
+   launchctl bootout gui/$(id -u)/homebrew.mxcl.ollama
+   launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/homebrew.mxcl.ollama.plist
+   ```
+
+3. **Start CBass without Docker Ollama:**
+   ```bash
+   python start_services.py --profile none --environment private
+   ```
+
+4. **Pull default models:**
+   ```bash
+   ollama pull qwen2.5:7b-instruct-q4_K_M
+   ollama pull nomic-embed-text
+   ```
+
+5. **Verify connectivity:**
+   ```bash
+   curl -sf http://localhost:11434/api/version
+   ```
+
+   Other CBass services reach system Ollama via `http://host.docker.internal:11434` (configured in `docker-compose.override.private.yml`).
+
+#### Memory Guide
+
+Apple Silicon uses unified memory shared between CPU and GPU. Reserve ~25% for macOS.
+
+| Total RAM | Usable for LLM | Recommended Models |
+|-----------|----------------|--------------------|
+| 8GB | ~6GB | 1B-3B models (Q4_K_M) |
+| 16GB | ~12GB | 7B models (Q4_K_M-Q8_0) |
+| 24GB | ~18GB | 7B-14B models, or 7B + embeddings concurrently |
+| 32GB | ~24GB | 14B-32B models (Q4_K_M) |
+| 64GB | ~48GB | 32B-70B models (Q4_K_M) |
+
+Use `/ollama-optimize` for precise per-model memory calculations and context window optimization.
+
+#### Useful Commands
+
 ```bash
-# In .env or docker-compose
-OLLAMA_HOST=host.docker.internal:11434
+# Check Ollama status
+brew services list | grep ollama
+
+# View Ollama logs
+tail -f /opt/homebrew/var/log/ollama.log
+
+# Audit config sync with CBass
+/cbass-ollama
+
+# Optimize model context windows
+/ollama-optimize
 ```
 
 ## Troubleshooting

@@ -27,6 +27,16 @@ docker compose -p localai --profile gpu-nvidia -f docker-compose.yml down
 docker compose -p localai logs -f <service>
 ```
 
+## Apple Silicon Notes
+
+Docker on Mac cannot access Metal GPU. For Apple Silicon:
+- Use `--profile none` to skip Docker Ollama
+- Install system Ollama via Homebrew (`brew install ollama`)
+- Services connect via `http://host.docker.internal:11434`
+- Launchd plist at `~/Library/LaunchAgents/homebrew.mxcl.ollama.plist` — env vars should match `docker-compose.yml` `x-ollama` anchor
+- Use `/cbass-ollama` to audit and sync config
+- Use `/ollama-optimize` for model memory/context optimization
+
 ## Documentation Paths by Task
 
 - **Deployment**: `docs/deployment/`

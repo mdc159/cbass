@@ -95,6 +95,42 @@ For a shorter snapshot, use `/cbass-context` (focus areas: deploy, services, ops
   - [x] Added KALI_HOSTNAME to both environments
   - [x] Generated new SSH key (`~/.ssh/cbass_vps`) and updated SSH config
 
+## Apple Silicon Configuration
+
+**Hardware**: Apple M4 Pro, 24GB unified memory
+
+CBass runs on Apple Silicon using system Ollama (Homebrew) with `--profile none` — Docker cannot access the Metal GPU.
+
+### System Ollama Environment Variables
+
+These are set in the launchd plist at `~/Library/LaunchAgents/homebrew.mxcl.ollama.plist` and should match the `x-ollama` anchor in `docker-compose.yml`:
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `OLLAMA_FLASH_ATTENTION` | `1` | Flash attention for faster inference |
+| `OLLAMA_KV_CACHE_TYPE` | `q8_0` | Quantized KV cache (halves memory vs fp16) |
+| `OLLAMA_CONTEXT_LENGTH` | `8192` | Default context window |
+| `OLLAMA_MAX_LOADED_MODELS` | `2` | Max concurrent models |
+| `OLLAMA_MODELS` | `/Volumes/Storage` | Model storage on external SSD |
+
+### Service URLs (--profile none)
+
+| Service | Reaches Ollama via |
+|---------|--------------------|
+| Open WebUI | `http://host.docker.internal:11434` (set in `docker-compose.override.private.yml`) |
+| n8n | Credential: Host `host.docker.internal`, Port `11434` |
+| Flowise | Base URL: `http://host.docker.internal:11434` |
+| Direct API | `http://localhost:11434` |
+
+### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/cbass-ollama` | Audit/sync plist env vars against docker-compose.yml |
+| `/cbass-ollama "sync"` | Write missing env vars to plist, restart Ollama |
+| `/cbass-ollama "audit"` | Run memory math, optimize model context windows |
+| `/ollama-optimize` | Global model optimization (not CBass-specific) |
+
 ## n8n MCP Issues (Needs Fix)
 
 The `n8n-mcp` package has several issues discovered during workflow development:
