@@ -69,14 +69,19 @@ This directory contains documentation for each service in the CBass stack.
 
 ### Local Development
 
-| Service | URL |
-|---------|-----|
-| n8n | http://localhost:5678 |
-| Open WebUI | http://localhost:8080 |
-| Flowise | http://localhost:3001 |
-| Supabase | http://localhost:8000 |
-| Neo4j | http://localhost:7474 |
-| Langfuse | http://localhost:3000 |
+| Service | URL | Notes |
+|---------|-----|-------|
+| Dashboard | http://localhost:3002 | |
+| n8n | http://localhost:5678 | Secure cookie disabled in private mode |
+| Open WebUI | http://localhost:8080 | Create account on first visit |
+| Flowise | http://localhost:3001 | |
+| Supabase | http://localhost:8000 | |
+| Neo4j | http://localhost:7474 | Username must be `neo4j` |
+| Langfuse | http://localhost:3000 | |
+| SearXNG | http://localhost:8081 | |
+| Kali | https://localhost:6901 | HTTPS required (self-signed cert), user: `kasm_user` |
+
+Service URLs are set automatically by `--environment private` via build args in `docker-compose.override.private.yml`. The dashboard cards link to the correct local/production URLs based on which environment was used at build time.
 
 ## Container Communication
 

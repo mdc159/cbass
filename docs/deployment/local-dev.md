@@ -59,15 +59,23 @@ Optional convenience flags for startup:
 
 After startup completes:
 
-| Service | URL |
-|---------|-----|
-| n8n | http://localhost:5678 |
-| Open WebUI | http://localhost:8080 |
-| Flowise | http://localhost:3001 |
-| Supabase Studio | http://localhost:8000 |
-| Neo4j Browser | http://localhost:7474 |
-| Langfuse | http://localhost:3000 |
-| SearXNG | http://localhost:8081 |
+| Service | URL | Login Notes |
+|---------|-----|-------------|
+| Dashboard | http://localhost:3002 | Supabase auth |
+| n8n | http://localhost:5678 | Create account on first visit |
+| Open WebUI | http://localhost:8080 | Create account on first visit |
+| Flowise | http://localhost:3001 | `FLOWISE_USERNAME` / `FLOWISE_PASSWORD` from `.env` |
+| Supabase Studio | http://localhost:8000 | `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` from `.env` |
+| Neo4j Browser | http://localhost:7474 | Username must be `neo4j`, password from `NEO4J_AUTH` |
+| Langfuse | http://localhost:3000 | `LANGFUSE_INIT_USER_EMAIL` / `LANGFUSE_INIT_USER_PASSWORD` (first run only) |
+| SearXNG | http://localhost:8081 | No auth |
+| Kali | https://localhost:6901 | HTTPS required, user: `kasm_user`, password: `KALI_VNC_PW` |
+
+The `--environment private` flag configures:
+- All service ports bound to `127.0.0.1`
+- Dashboard card links pointing to `localhost` URLs (built into the Next.js app)
+- n8n secure cookies disabled for plain HTTP access
+- `NODE_TLS_REJECT_UNAUTHORIZED=0` on dashboard for Kali health checks (self-signed cert)
 
 ## GPU Profiles
 

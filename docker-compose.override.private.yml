@@ -10,6 +10,9 @@ services:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
 
   n8n:
+    environment:
+      - N8N_SECURE_COOKIE=false
+      - WEBHOOK_URL=http://localhost:5678
     ports:
       - 127.0.0.1:5678:5678
 
@@ -68,6 +71,8 @@ services:
       - 127.0.0.1:11434:11434
 
   dashboard:
+    environment:
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
     build:
       context: ./dashboard
       args:
@@ -78,7 +83,7 @@ services:
         NEXT_PUBLIC_LANGFUSE_URL: http://localhost:3000
         NEXT_PUBLIC_SEARXNG_URL: http://localhost:8081
         NEXT_PUBLIC_NEO4J_URL: http://localhost:7474
-        NEXT_PUBLIC_KALI_URL: http://localhost:6901
+        NEXT_PUBLIC_KALI_URL: https://localhost:6901
     ports:
       - 127.0.0.1:3002:3000
 

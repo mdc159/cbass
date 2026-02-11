@@ -13,6 +13,18 @@ n8n is a visual workflow automation platform with 400+ integrations. It serves a
 | Production | https://n8n.cbass.space |
 | Local | http://localhost:5678 |
 
+## Local Development Notes
+
+In private/local mode, the compose override sets:
+- `N8N_SECURE_COOKIE=false` — allows login over plain HTTP
+- `WEBHOOK_URL=http://localhost:5678` — overrides the production webhook URL
+
+Without these, n8n rejects cookies on `http://localhost` because the production hostname (`n8n.cbass.space`) implies HTTPS.
+
+To reset user accounts: `docker exec n8n n8n user-management:reset`
+
+Note: `N8N_BASIC_AUTH_*` env vars are deprecated since n8n v1.0 and silently ignored. n8n uses its own internal user management.
+
 ## First-Time Setup
 
 1. Navigate to n8n URL

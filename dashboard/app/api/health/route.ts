@@ -3,10 +3,11 @@ import { services, toHealthCheckUrl } from "@/lib/services"
 
 async function checkService(url: string): Promise<"online" | "offline"> {
   try {
+    const healthUrl = toHealthCheckUrl(url)
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-    const response = await fetch(toHealthCheckUrl(url), {
+    const response = await fetch(healthUrl, {
       method: "HEAD",
       signal: controller.signal,
     })

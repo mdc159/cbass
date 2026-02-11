@@ -508,7 +508,7 @@ The `flowise-masterclass` templates use invalid model names like `gpt-4.1-mini` 
 
 | Service | Port | Purpose |
 |---------|------|---------|
-| **Dashboard** | 3001 | Next.js AI Command Center with video landing |
+| **Dashboard** | 3002 (local) | Next.js AI Command Center with video landing |
 | **n8n** | 5678 | Workflow automation & AI agent building |
 | **Open WebUI** | 8080 | Chat interface for LLMs |
 | **Supabase** | 8000 | Postgres DB, vector store (pgvector), auth |
@@ -528,8 +528,10 @@ The `flowise-masterclass` templates use invalid model names like `gpt-4.1-mini` 
 |------|---------|
 | `start_services.py` | Main entry point - clones Supabase, starts stack |
 | `docker-compose.yml` | Container orchestration with profile support |
-| `docker-compose.override.private.yml` | Development mode (all ports exposed) |
-| `docker-compose.override.public.yml` | Production mode (only 80/443 via Caddy) |
+| `docker-compose.override.private.yml` | Development mode (localhost ports, local dashboard URLs, n8n secure cookie off) |
+| `docker-compose.override.public.yml` | Production mode (only 80/443 via Caddy, production dashboard URLs) |
+| `docker-compose.override.private.supabase.yml` | Supabase port bindings for local dev |
+| `dashboard/lib/services.ts` | Shared service URL config (reads `NEXT_PUBLIC_*_URL` env vars) |
 | `Caddyfile` | Reverse proxy routing with auto-TLS |
 | `n8n_pipe.py` | Open WebUI to n8n integration bridge |
 | `env.example` | Environment template (copy to `.env`) |
@@ -572,8 +574,10 @@ CBass/
 - `none` - No local LLM (external API only)
 
 ### Environment Modes
-- **Private** (development): All ports exposed locally
-- **Public** (production): Only 80/443 via Caddy with auto-TLS
+- **Private** (development): All ports exposed locally, dashboard links to `localhost`, n8n secure cookies disabled
+- **Public** (production): Only 80/443 via Caddy with auto-TLS, dashboard links to `*.cbass.space`
+
+The `--environment` flag drives the dashboard build: service card URLs are baked in at build time via `NEXT_PUBLIC_*_URL` build args in the compose overrides. Private mode uses `localhost:PORT`, public mode uses `https://service.cbass.space`.
 
 ### Commands
 ```bash
@@ -600,10 +604,10 @@ Open WebUI (:8080) → n8n_pipe.py → n8n webhook (:5678)
 ### Environment Variables (in `.env`)
 - **Required**: `N8N_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`
 - **Hostnames**: `N8N_HOSTNAME`, `WEBUI_HOSTNAME`, `FLOWISE_HOSTNAME`, `DASHBOARD_HOSTNAME`, `KALI_HOSTNAME`, etc.
-- **Dashboard**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **Kali**: `VNC_PW` (VNC password for Kali desktop)
+- **Dashboard**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (runtime), plus `NEXT_PUBLIC_*_URL` service URLs (build-time, set in compose overrides)
+- **Kali**: `KALI_VNC_PW` (VNC password for Kali desktop, login user is `kasm_user`)
 - **Langfuse**: `CLICKHOUSE_PASSWORD`, `MINIO_ROOT_PASSWORD`
-- **Neo4j**: `NEO4J_AUTH=username/password`
+- **Neo4j**: `NEO4J_AUTH=neo4j/password` (username must be `neo4j`)
 
 ### Important Constraints
 - Never use `@` in `POSTGRES_PASSWORD` (breaks URI parsing)

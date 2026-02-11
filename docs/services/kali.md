@@ -17,10 +17,11 @@ Note: Uses HTTPS even locally (self-signed cert).
 
 ## First-Time Setup
 
-1. Navigate to Kali URL
-2. Accept self-signed certificate warning
-3. Login with VNC password from `.env`:
-   - Password: `VNC_PW` value
+1. Navigate to Kali URL (`https://localhost:6901` locally)
+2. Accept self-signed certificate warning in browser
+3. Login with KasmWeb credentials:
+   - Username: `kasm_user`
+   - Password: `KALI_VNC_PW` value from `.env`
 
 ## Interface
 
@@ -117,7 +118,7 @@ Kali includes hundreds of security tools:
 
 ```bash
 # In .env
-VNC_PW=yourpassword           # Required for login
+KALI_VNC_PW=yourpassword        # Required for login (user: kasm_user)
 KALI_HOSTNAME=kali.cbass.space  # Production hostname
 ```
 
