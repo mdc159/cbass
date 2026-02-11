@@ -1,7 +1,7 @@
 # Tasks
 
 ## Active
-- [ ] Commit staged CLAUDE.md changes (Claude Code commands section)
+- [x] Commit staged CLAUDE.md changes (Claude Code commands section) — committed in 3513347, updated in b3368df
 - [ ] Finish MCP server setup: install n8n-skills plugin, restart Claude Code
 - [ ] Create n8n owner account (user management was reset)
 - [ ] Re-import backed up workflow from `/tmp/n8n-backup.json`
@@ -26,3 +26,4 @@
 - [2026-02-07] Session resumed on branch master
 - [2026-02-09] Session resumed on branch master
 - [2026-02-09] Session resumed on branch local
+- [2026-02-11] Session resumed on branch codex/repack-local-2
