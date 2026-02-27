@@ -87,6 +87,10 @@ services:
     ports:
       - 127.0.0.1:3002:3000
 
+  updater:
+    environment:
+      - COMPOSE_FILE=/opt/cbass/docker-compose.yml:/opt/cbass/docker-compose.override.private.yml
+
   kali:
     ports:
       - 127.0.0.1:6901:6901

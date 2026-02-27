@@ -433,12 +433,13 @@ services:
 
   # Update webhook service - triggers container updates
   updater:
-    image: almir/webhook
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile
     container_name: updater
     restart: unless-stopped
     command: -hooks=/etc/webhook/hooks.json -verbose
     volumes:
-      - ./scripts:/scripts:ro
       - ./scripts/hooks.json:/etc/webhook/hooks.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/opt/cbass

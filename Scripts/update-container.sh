@@ -1,4 +1,6 @@
 #!/bin/bash
+set -euo pipefail
+
 # Update a specific container by pulling latest image and recreating
 
 CONTAINER=$1
@@ -13,13 +15,13 @@ cd /opt/cbass
 
 echo "=== Updating $CONTAINER ==="
 echo "Step 1: Pulling latest image..."
-docker compose -p localai pull $CONTAINER
+docker compose -p localai pull "$CONTAINER"
 
 echo "Step 2: Recreating container..."
-docker compose -p localai up -d $CONTAINER
+docker compose -p localai up -d "$CONTAINER"
 
 echo "Step 3: Cleaning up old images..."
 docker image prune -f
 
 echo "=== Update complete for $CONTAINER ==="
-docker ps --filter name=$CONTAINER --format "Name: {{.Names}}\nStatus: {{.Status}}\nImage: {{.Image}}"
+docker ps --filter "name=$CONTAINER" --format "Name: {{.Names}}\nStatus: {{.Status}}\nImage: {{.Image}}"

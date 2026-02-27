@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-02-27
+
+### Fixed
+- **Updater service** — dashboard "Update" buttons were silently failing due to three issues:
+  1. `update-container.sh` was mounted read-only with `644` permissions (not executable)
+  2. The `almir/webhook` Alpine image had no `docker` or `docker compose` CLI
+  3. The update script ran bare `docker compose up -d` without the override files, so recreated containers lost their environment config (ports, `OLLAMA_BASE_URL`, etc.)
+
+### Changed
+- Updater now builds a custom image (`scripts/Dockerfile`) extending `almir/webhook` with `bash`, `docker-cli`, and `docker-cli-compose` baked in
+- Update script baked into the image with `chmod +x` — eliminates host permission issues
+- `COMPOSE_FILE` env var set on the updater in both override files so `docker compose` commands automatically use the correct base + override config
+- `update-container.sh` hardened with `set -euo pipefail` and quoted variable expansion
+
+### Technical details
+- Container runs as root (required for Docker socket access; socket mount is already equivalent to host root)
+- `scripts/Dockerfile` adds ~50MB (bash + docker CLI + compose plugin) to the webhook base image
+- Verified end-to-end: Playwright browser test logs into dashboard, clicks Update, confirms API 200 + success banner, and validates the container was recreated with correct override labels
+
 ## 2026-02-11
 
 ### Added

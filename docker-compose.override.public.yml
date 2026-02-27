@@ -20,3 +20,7 @@ services:
         NEXT_PUBLIC_SEARXNG_URL: https://searxng.cbass.space
         NEXT_PUBLIC_NEO4J_URL: https://neo4j.cbass.space
         NEXT_PUBLIC_KALI_URL: https://kali.cbass.space
+
+  updater:
+    environment:
+      - COMPOSE_FILE=/opt/cbass/docker-compose.yml:/opt/cbass/docker-compose.override.public.yml
