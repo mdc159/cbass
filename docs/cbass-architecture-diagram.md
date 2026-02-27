@@ -23,7 +23,7 @@ graph TB
         end
 
         subgraph Frontend["🎨 Frontend Layer"]
-            Dashboard["📊 Dashboard<br/>Next.js 15 + shadcn/ui<br/>Supabase Auth<br/>Dark/Light Mode"]
+            Dashboard["📊 Dashboard<br/>Next.js 16 + shadcn/ui<br/>Supabase Auth<br/>Dark/Light Mode"]
         end
 
         subgraph AI["🤖 AI Services"]
@@ -234,7 +234,7 @@ graph TB
 mindmap
   root((CBass<br/>AI Stack))
     Frontend
-      Next.js 15
+      Next.js 16
       TypeScript
       Tailwind CSS
       shadcn/ui

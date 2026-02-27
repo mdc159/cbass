@@ -170,7 +170,7 @@ sequenceDiagram
 |------|---------|----------|-------|
 | 80 | Caddy | HTTP | Redirects to 443 |
 | 443 | Caddy | HTTPS | Main entry point |
-| 3000 | Dashboard / Langfuse / Studio | HTTP | Multiple services share port internally |
+| 3000 | Dashboard (internal) / Langfuse / Studio | HTTP | Dashboard exposed on 3002 locally; 3000 is the internal container port |
 | 3001 | Flowise | HTTP | Visual AI builder |
 | 5432 | PostgreSQL | TCP | Database |
 | 5678 | n8n | HTTP | Workflow engine |

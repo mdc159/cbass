@@ -35,7 +35,7 @@ Services communicate using container names as hostnames:
 
 | Port | Service | Protocol | Purpose |
 |------|---------|----------|---------|
-| 3000 | Dashboard, Langfuse, Studio | HTTP | Multiple services share |
+| 3000 | Dashboard (local: 3002), Langfuse, Studio | HTTP | Multiple services share; Dashboard exposed on 3002 in local dev |
 | 3001 | Flowise | HTTP | AI builder |
 | 5432 | PostgreSQL | TCP | Database |
 | 5678 | n8n | HTTP | Workflow engine |

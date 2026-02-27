@@ -35,6 +35,8 @@ High-level architecture of the CBass self-hosted AI stack.
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> Note: Dashboard internal container port is 3000; in local dev (`--environment private`) it is exposed on host port 3002.
+
 ## Component Categories
 
 ### Frontend Layer

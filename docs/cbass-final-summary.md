@@ -12,7 +12,7 @@
 A complete self-hosted AI stack with beautiful web dashboard, including:
 
 ### Core Services
-- **Dashboard** - Next.js 15 with shadcn/ui and Supabase auth
+- **Dashboard** - Next.js 16 with shadcn/ui and Supabase auth
 - **n8n** - Workflow automation platform
 - **Open WebUI** - ChatGPT-like interface for local LLMs
 - **Flowise** - Visual AI workflow builder
@@ -56,7 +56,6 @@ All A records pointing to 191.101.0.164:
 | supabase.cbass.space | Database admin |
 | langfuse.cbass.space | LLM monitoring |
 | neo4j.cbass.space | Graph database |
-| opencode.cbass.space | Reserved for future |
 | searxng.cbass.space | Search engine |
 
 ### SSL Certificates
@@ -120,7 +119,7 @@ All A records pointing to 191.101.0.164:
 ## 🎨 Dashboard Features
 
 ### Technology Stack
-- **Framework:** Next.js 15 with App Router
+- **Framework:** Next.js 16 with App Router
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS 4
 - **Components:** shadcn/ui
@@ -301,8 +300,6 @@ ssh cbass "docker compose -p localai restart dashboard"
 ### Project Documentation
 - **Main README:** https://github.com/mdc159/cbass/blob/main/README.md
 - **Deployment Guide:** https://github.com/mdc159/cbass/blob/main/DEPLOYMENT.md
-- **OpenCode Setup:** https://github.com/mdc159/cbass/blob/main/OPENCODE_SETUP.md
-
 ### Service Documentation
 - **n8n:** https://docs.n8n.io/
 - **Supabase:** https://supabase.com/docs
@@ -318,7 +315,6 @@ ssh cbass "docker compose -p localai restart dashboard"
 
 This deployment is designed for teaching Sebastian AI development, featuring:
 - Pre-built n8n workflows for learning
-- OpenCode integration for AI-assisted coding
 - Complete AI stack for experimentation
 - Local LLMs for privacy and learning
 - Graph databases for knowledge representation
@@ -333,8 +329,7 @@ This deployment is designed for teaching Sebastian AI development, featuring:
 3. **Test dashboard login** at https://cbass.space
 4. **Set up n8n credentials** and import workflows
 5. **Configure Open WebUI** with n8n integration
-6. **Optional:** Deploy OpenCode web interface
-7. **Optional:** Set up OAuth providers for dashboard
+6. **Optional:** Set up OAuth providers for dashboard
 
 ---
 

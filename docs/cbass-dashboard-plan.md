@@ -50,7 +50,7 @@ A gorgeous, modern dashboard with:
 
 ## Tech Stack
 
-- **Next.js 15** - React framework
+- **Next.js 16** - React framework
 - **TypeScript** - Type safety
 - **Tailwind CSS 4** - Styling
 - **shadcn/ui** - Component library
@@ -186,7 +186,7 @@ Already in `/opt/cbass/.env`:
 
 - Dashboard is fully responsive
 - Works offline (PWA-ready with small config)
-- Fast (Next.js 15 with standalone output)
+- Fast (Next.js 16 with standalone output)
 - Secure (Supabase auth with JWT)
 - Beautiful (shadcn/ui + Tailwind)
 - Accessible (ARIA labels, keyboard navigation)

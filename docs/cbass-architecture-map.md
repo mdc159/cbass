@@ -108,7 +108,7 @@ Legend:
 | Service | Container | Internal port(s) | External access | Storage | Notes |
 |---|---|---|---|---|---|
 | Caddy | `caddy` | 80, 443, 2019 | Public 80/443 | `caddy-data`, `caddy-config` | Front door with TLS and routing |
-| Dashboard | `dashboard` | 3000 | `cbass.space` | built in container | UI hub, uses Supabase auth |
+| Dashboard | `dashboard` | 3000 (local: 3002) | `cbass.space` | built in container | UI hub, uses Supabase auth |
 | n8n | `n8n` | 5678 | `N8N_HOSTNAME` or `:8001` | `n8n_storage`, `./n8n/backup`, `./shared` | Workflow engine |
 | Open WebUI | `open-webui` | 8080 | `WEBUI_HOSTNAME` or `:8002` | `open-webui` | Chat UI; can call n8n via `n8n_pipe.py` |
 | Flowise | `flowise` | 3001 | `FLOWISE_HOSTNAME` or `:8003` | `~/.flowise` | Visual AI builder |
@@ -150,7 +150,7 @@ Supabase is auto-cloned into `supabase/` and uses its own compose file. Key cont
 | Service | Port(s) | Purpose |
 |---|---|---|
 | Caddy | 80, 443 | Edge routing |
-| Dashboard | 3000 | UI |
+| Dashboard | 3000 (local: 3002) | UI |
 | n8n | 5678 | Workflow UI and API |
 | Open WebUI | 8080 | Chat UI |
 | Flowise | 3001 | UI |
@@ -307,7 +307,7 @@ Examples of internal DNS usage from within containers:
 | `docker compose` | Lifecycle management | repo root |
 | `Caddyfile` | Hostname routing | repo root |
 | `scripts/update-container.sh` | Update webhook target | `scripts/` |
-| `Scripts/hooks.json` | Webhook config for updates | `Scripts/` |
+| `scripts/hooks.json` | Webhook config for updates | `scripts/` |
 
 ## Jarvis Agent: Structure and Minimum Access Model
 

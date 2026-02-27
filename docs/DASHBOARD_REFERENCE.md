@@ -85,7 +85,7 @@ The landing page with authentication options:
 - Google OAuth button
 - Sign-up link
 - Error display
-- Gradient background (slate-900 → purple-900 → slate-900)
+- Full-screen MP4 video background
 
 **Key code:**
 ```typescript
@@ -121,7 +121,6 @@ The main control panel showing all services:
 | n8n | Workflow Automation | https://n8n.cbass.space | 🤖 |
 | Open WebUI | AI Chat Interface | https://openwebui.cbass.space | 💬 |
 | Flowise | Visual AI Builder | https://flowise.cbass.space | 🔄 |
-| OpenCode | AI Code Assistant | https://opencode.cbass.space | 🧠 |
 | Supabase | Database & Backend | https://supabase.cbass.space | 🗄️ |
 | Langfuse | LLM Observability | https://langfuse.cbass.space | 📊 |
 | SearXNG | Meta Search Engine | https://searxng.cbass.space | 🔍 |

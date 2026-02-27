@@ -42,7 +42,6 @@ All DNS A records configured in AWS Route 53:
 | supabase.cbass.space | 191.101.0.164 | 300 | ✅ Resolving |
 | langfuse.cbass.space | 191.101.0.164 | 300 | ✅ Resolving |
 | neo4j.cbass.space | 191.101.0.164 | 300 | ✅ Resolving |
-| opencode.cbass.space | 191.101.0.164 | 300 | ✅ Resolving |
 | searxng.cbass.space | 191.101.0.164 | 300 | ✅ Resolving |
 
 ---
@@ -74,7 +73,7 @@ The beautiful Next.js dashboard at **cbass.space** includes:
 - Email/password authentication
 - Google OAuth (needs Supabase config)
 - GitHub OAuth (needs Supabase config)
-- Gradient background with animated logo
+- Full-screen MP4 video background with animated logo
 - Modern, responsive design
 
 ### Dashboard Page
@@ -87,7 +86,7 @@ The beautiful Next.js dashboard at **cbass.space** includes:
 - Logout button
 
 ### Tech Stack
-- Next.js 15 + TypeScript
+- Next.js 16 + TypeScript
 - Tailwind CSS 4
 - shadcn/ui components
 - Supabase authentication
