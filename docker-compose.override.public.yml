@@ -8,6 +8,16 @@ services:
   supavisor:
     ports: !reset null
 
+  # Supabase URL overrides for production
+  auth:
+    environment:
+      API_EXTERNAL_URL: https://supabase.cbass.space
+      GOTRUE_SITE_URL: https://supabase.cbass.space
+
+  studio:
+    environment:
+      SUPABASE_PUBLIC_URL: https://supabase.cbass.space
+
   dashboard:
     build:
       context: ./dashboard
@@ -16,10 +26,13 @@ services:
         NEXT_PUBLIC_OPENWEBUI_URL: https://openwebui.cbass.space
         NEXT_PUBLIC_FLOWISE_URL: https://flowise.cbass.space
         NEXT_PUBLIC_SUPABASE_STUDIO_URL: https://supabase.cbass.space
+        NEXT_PUBLIC_SUPABASE_URL: https://supabase.cbass.space
         NEXT_PUBLIC_LANGFUSE_URL: https://langfuse.cbass.space
         NEXT_PUBLIC_SEARXNG_URL: https://searxng.cbass.space
         NEXT_PUBLIC_NEO4J_URL: https://neo4j.cbass.space
         NEXT_PUBLIC_KALI_URL: https://kali.cbass.space
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=https://supabase.cbass.space
 
   updater:
     environment:

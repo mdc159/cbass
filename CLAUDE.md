@@ -604,7 +604,7 @@ Open WebUI (:8080) → n8n_pipe.py → n8n webhook (:5678)
 ### Environment Variables (in `.env`)
 - **Required**: `N8N_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY`
 - **Hostnames**: `N8N_HOSTNAME`, `WEBUI_HOSTNAME`, `FLOWISE_HOSTNAME`, `DASHBOARD_HOSTNAME`, `KALI_HOSTNAME`, etc.
-- **Dashboard**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (runtime), plus `NEXT_PUBLIC_*_URL` service URLs (build-time, set in compose overrides)
+- **Dashboard**: `NEXT_PUBLIC_SUPABASE_ANON_KEY` (in `.env`), plus `NEXT_PUBLIC_*_URL` service URLs including `NEXT_PUBLIC_SUPABASE_URL` (build-time, set in compose overrides)
 - **Kali**: `KALI_VNC_PW` (VNC password for Kali desktop, login user is `kasm_user`)
 - **Langfuse**: `CLICKHOUSE_PASSWORD`, `MINIO_ROOT_PASSWORD`
 - **Neo4j**: `NEO4J_AUTH=neo4j/password` (username must be `neo4j`)
@@ -616,23 +616,43 @@ Open WebUI (:8080) → n8n_pipe.py → n8n webhook (:5678)
 
 ### Environment File Sync
 
-**One `.env` to rule them all** - The same `.env` file is used for both local development and VPS production. The VPS copy at `/opt/cbass/.env` is the source of truth.
+**One `.env` to rule them all** - The same `.env` file is used for both local development and VPS production, kept identical across both machines.
+
+**Architecture:**
+- **`.env`** — All shared config (secrets, hostnames, credentials). Identical on local and VPS.
+- **`docker-compose.override.private.yml`** — Local-only: Supabase URLs (`http://localhost:8000`), exposed ports, dev settings
+- **`docker-compose.override.public.yml`** — VPS-only: Supabase URLs (`https://supabase.cbass.space`), Caddy routing
+
+**Environment-specific vars (in override files, NOT .env):**
+| Variable | Private (local) | Public (VPS) |
+|----------|----------------|--------------|
+| `API_EXTERNAL_URL` | `http://localhost:8000` | `https://supabase.cbass.space` |
+| `GOTRUE_SITE_URL` | `http://localhost:8000` | `https://supabase.cbass.space` |
+| `SUPABASE_PUBLIC_URL` | `http://localhost:8000` | `https://supabase.cbass.space` |
+| `NEXT_PUBLIC_SUPABASE_URL` | `http://localhost:8000` | `https://supabase.cbass.space` |
 
 **Why this works:**
 - Hostnames like `n8n.cbass.space` work from anywhere (local browser hits VPS)
 - All secrets are shared between environments
 - No drift between local and production configs
+- Environment-specific URLs are handled by compose overrides (already used for ports, dashboard URLs, etc.)
 
 **Sync Commands:**
 ```bash
 # Pull latest from VPS to local
-scp cbass:/opt/cbass/.env /home/mdc159/projects/cbass/.env
+scp cbass:/opt/cbass/.env .env
 
 # Push local changes to VPS
-scp /home/mdc159/projects/cbass/.env cbass:/opt/cbass/.env
+scp .env cbass:/opt/cbass/.env
 
 # After changes on VPS, restart affected services
 ssh cbass "cd /opt/cbass && docker compose -p localai restart [service]"
+```
+
+**Verify sync:**
+```bash
+diff .env <(ssh cbass "cat /opt/cbass/.env")
+# Should show zero differences
 ```
 
 **SSH Setup:**
