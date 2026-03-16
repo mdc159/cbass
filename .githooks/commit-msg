@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# commit-msg hook — blocks commits missing required changelog sections.
+# See .github/COMMIT_TEMPLATE.md for the full format.
+# Override with: git commit --no-verify
+
+set -euo pipefail
+
+MSG_FILE="$1"
+MSG=$(cat "$MSG_FILE")
+
+# Strip comments (lines starting with #)
+BODY=$(echo "$MSG" | grep -v '^#' || true)
+
+# Extract subject (first non-empty line)
+SUBJECT=$(echo "$BODY" | head -1)
+
+# Count files being committed
+CHANGED_FILES=$(git diff --cached --name-only | wc -l | tr -d ' ')
+
+FAIL=false
+
+# ── Subject line checks ──────────────────────────────────────────────
+if [[ ${#SUBJECT} -gt 72 ]]; then
+    echo ""
+    echo "✗  Subject line is ${#SUBJECT} chars (max 72)"
+    FAIL=true
+fi
+
+# ── Body checks (only for multi-file commits) ────────────────────────
+# Single-file commits (e.g., Brewfile additions) get a lighter check.
+if [[ "$CHANGED_FILES" -le 1 ]]; then
+    # For single-file commits, just check for WHY
+    if ! echo "$BODY" | grep -qi '^WHY:'; then
+        echo ""
+        echo "✗  Missing WHY section"
+        echo "   Even simple changes need a one-line WHY."
+        FAIL=true
+    fi
+else
+    # Multi-file commits should have full structure
+    MISSING=()
+    echo "$BODY" | grep -qi '^WHY:'  || MISSING+=("WHY")
+    echo "$BODY" | grep -qi '^WHAT:' || MISSING+=("WHAT")
+    echo "$BODY" | grep -qi '^HOW:'  || MISSING+=("HOW")
+
+    if [[ ${#MISSING[@]} -gt 0 ]]; then
+        echo ""
+        echo "✗  Missing sections: ${MISSING[*]}"
+        echo "   This commit touches $CHANGED_FILES files."
+        FAIL=true
+    fi
+fi
+
+if $FAIL; then
+    echo ""
+    echo "   See: .github/COMMIT_TEMPLATE.md"
+    echo "   Override: git commit --no-verify"
+    exit 1
+fi
