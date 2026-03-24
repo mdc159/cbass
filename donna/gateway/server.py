@@ -35,7 +35,7 @@ GATEWAY_HOST = os.environ.get("GATEWAY_HOST", "0.0.0.0")
 GATEWAY_PORT = int(os.environ.get("GATEWAY_PORT", "8765"))
 MINIAPP_URL = os.environ.get("MINIAPP_URL", "")
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
-WORKING_DIR = os.environ.get("DONNA_WORKDIR", os.path.expanduser("~/projects/openclaw-workspace"))
+WORKING_DIR = os.environ.get("DONNA_WORKDIR", os.path.expanduser("~/app"))
 VOICE_SESSION_SECRET = os.environ.get("VOICE_SESSION_SECRET", "")
 
 SYSTEM_PROMPT = (

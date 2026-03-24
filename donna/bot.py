@@ -48,7 +48,7 @@ for mapping in os.environ.get("DONNA_PROJECT_GROUPS", "").split(","):
         ALLOWED_GROUPS.add(int(gid.strip()))  # Auto-authorize mapped groups
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
 CLAUDE_ARGS = os.environ.get("CLAUDE_ARGS", "--dangerously-skip-permissions").split()
-WORKING_DIR = os.environ.get("DONNA_WORKDIR", os.path.expanduser("~/projects/openclaw-workspace"))
+WORKING_DIR = os.environ.get("DONNA_WORKDIR", os.path.expanduser("~/app"))
 MAX_RESPONSE_LEN = 4000  # Telegram message limit ~4096
 MAX_HISTORY = 20  # Keep last N message pairs per chat
 
