@@ -26,6 +26,11 @@ if _env_file.exists():
 
 # --- Config ---
 BOT_TOKEN = os.environ.get("DONNA_BOT_TOKEN", "")
+
+# --- Self-hosted Telegram Bot API ---
+TELEGRAM_BASE_URL = os.environ.get("TELEGRAM_BASE_URL", "")  # e.g. http://telegram-bot-api:8081/bot
+TELEGRAM_BASE_FILE_URL = os.environ.get("TELEGRAM_BASE_FILE_URL", "")  # e.g. http://telegram-bot-api:8081/file/bot
+TELEGRAM_LOCAL_MODE = os.environ.get("TELEGRAM_LOCAL_MODE", "") == "1"
 AUTHORIZED_USERS = {8246962767}  # Mike's Telegram user ID
 ALLOWED_GROUPS = {-1003678142898, -5210450493}  # Ollama1 group + Agent Coordination Protocol group
 
@@ -968,7 +973,18 @@ def main():
     print(f"History: {MAX_HISTORY} messages per chat")
     print(f"Auto-poll: {'ON' if AUTOPOLL_ENABLED else 'OFF'} (every {AUTOPOLL_INTERVAL}s)")
     print(f"Oversight: every {OVERSIGHT_INTERVAL}s, watching {TEST_BUILDER_WORKSPACE}")
-    app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
+    builder = Application.builder().token(BOT_TOKEN).post_init(post_init)
+
+    # Connect to self-hosted Telegram Bot API if configured
+    if TELEGRAM_BASE_URL:
+        builder = builder.base_url(TELEGRAM_BASE_URL).base_file_url(TELEGRAM_BASE_FILE_URL)
+        if TELEGRAM_LOCAL_MODE:
+            builder = builder.local_mode(True)
+        print(f"Using self-hosted Telegram Bot API: {TELEGRAM_BASE_URL}")
+    else:
+        print("Using official Telegram Bot API")
+
+    app = builder.build()
     app.add_handler(CommandHandler("voice", handle_voice_toggle))
     app.add_handler(CommandHandler("talk", handle_talk))
     app.add_handler(CommandHandler("archon", handle_archon))
